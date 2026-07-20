@@ -366,7 +366,9 @@ async function loadTracks() {
     });
     if (r.ok) {
       const j = await r.json();
-      const txt = atob(j.content.replace(/\n/g, ""));
+      // base64 解码出的是 UTF-8 字节序列，需正确还原中文等多字节字符
+      const bytes = Uint8Array.from(atob(j.content.replace(/\n/g, "")), c => c.charCodeAt(0));
+      const txt = new TextDecoder("utf-8").decode(bytes);
       meta = JSON.parse(txt);
     }
   } catch {}
@@ -531,7 +533,8 @@ async function uploadFile(file, title, desc) {
     });
     if (r.ok) {
       const j = await r.json();
-      meta = JSON.parse(atob(j.content.replace(/\n/g, "")));
+      const bytes = Uint8Array.from(atob(j.content.replace(/\n/g, "")), c => c.charCodeAt(0));
+      meta = JSON.parse(new TextDecoder("utf-8").decode(bytes));
     }
   } catch {}
   meta[file.name] = { title, desc };
