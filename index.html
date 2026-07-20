@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>hailuo-music · Web Player</title>
+<style>
+  :root {
+    --bg-0: #0b0d12;
+    --bg-1: #11141c;
+    --bg-2: #181c26;
+    --fg:   #e8ecf3;
+    --fg-dim: #8a93a6;
+    --accent: #7c9cff;
+    --accent-2: #b78bff;
+    --border: #232838;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    color: var(--fg);
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(124,156,255,0.18), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(183,139,255,0.15), transparent 55%),
+      linear-gradient(180deg, var(--bg-0), var(--bg-1));
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 20px 80px; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow: 0 6px 18px rgba(124,156,255,0.35);
+  }
+  h1 { font-size: 20px; margin: 0; letter-spacing: 0.3px; }
+  .sub { color: var(--fg-dim); font-size: 12px; margin-top: 2px; }
+  .repo {
+    color: var(--fg-dim); text-decoration: none; font-size: 12px;
+    border: 1px solid var(--border); padding: 6px 10px; border-radius: 999px;
+  }
+  .repo:hover { color: var(--fg); border-color: #2e3447; }
+
+  .now {
+    background: linear-gradient(180deg, var(--bg-2), #141822);
+    border: 1px solid var(--border);
+    border-radius: 18px; padding: 22px;
+    display: grid; grid-template-columns: 88px 1fr; gap: 18px;
+    align-items: center;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+  }
+  .cover {
+    width: 88px; height: 88px; border-radius: 12px;
+    background: conic-gradient(from 0deg, var(--accent), var(--accent-2), var(--accent));
+    position: relative; overflow: hidden;
+    box-shadow: 0 8px 24px rgba(124,156,255,0.25);
+  }
+  .cover::after {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 50%, transparent 28%, rgba(0,0,0,0.35) 30%, transparent 60%);
+  }
+  .cover.playing { animation: spin 8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .meta .title { font-size: 18px; font-weight: 600; }
+  .meta .desc { color: var(--fg-dim); font-size: 13px; margin-top: 4px; }
+
+  .controls { margin-top: 16px; display: flex; align-items: center; gap: 14px; }
+  button.btn {
+    background: rgba(255,255,255,0.06); color: var(--fg);
+    border: 1px solid var(--border); border-radius: 999px;
+    width: 42px; height: 42px; cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; transition: all .15s ease;
+  }
+  button.btn:hover { background: rgba(255,255,255,0.12); }
+  button.btn.play {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border: none; color: white;
+    box-shadow: 0 8px 20px rgba(124,156,255,0.4);
+  }
+  button.btn.play:hover { transform: scale(1.05); }
+
+  .progress {
+    flex: 1; height: 6px; background: rgba(255,255,255,0.08);
+    border-radius: 999px; position: relative; cursor: pointer;
+  }
+  .bar {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 0%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width .1s linear;
+  }
+  .time { color: var(--fg-dim); font-variant-numeric: tabular-nums; font-size: 12px; min-width: 92px; text-align: right; }
+  .vol { display: flex; align-items: center; gap: 8px; }
+  .vol input { width: 90px; accent-color: var(--accent); }
+
+  ul.list { list-style: none; padding: 0; margin: 22px 0 0; }
+  ul.list li {
+    display: grid; grid-template-columns: 38px 1fr auto; gap: 14px;
+    align-items: center; padding: 14px 16px; border-radius: 12px;
+    border: 1px solid transparent; cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  ul.list li:hover { background: rgba(255,255,255,0.03); }
+  ul.list li.active { background: rgba(124,156,255,0.08); border-color: rgba(124,156,255,0.25); }
+  ul.list li .num { color: var(--fg-dim); font-variant-numeric: tabular-nums; }
+  ul.list li .name { font-weight: 500; }
+  ul.list li .name small { display: block; color: var(--fg-dim); font-weight: 400; font-size: 12px; margin-top: 2px; }
+  ul.list li .dur { color: var(--fg-dim); font-variant-numeric: tabular-nums; font-size: 12px; }
+
+  footer { margin-top: 28px; color: var(--fg-dim); font-size: 12px; text-align: center; }
+  footer a { color: var(--fg-dim); }
+  footer a:hover { color: var(--fg); }
+
+  @media (max-width: 520px) {
+    .now { grid-template-columns: 64px 1fr; padding: 16px; }
+    .cover { width: 64px; height: 64px; }
+    .vol { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <h1>hailuo-music</h1>
+        <div class="sub">海螺 music-3.0-free · GitHub 仓库直连播放</div>
+      </div>
+    </div>
+    <a class="repo" href="https://github.com/binbinao/hailuo-music" target="_blank" rel="noopener">↗ GitHub</a>
+  </header>
+
+  <section class="now">
+    <div class="cover" id="cover"></div>
+    <div>
+      <div class="meta">
+        <div class="title" id="curTitle">—</div>
+        <div class="desc" id="curDesc">选择下方曲目开始播放</div>
+      </div>
+      <div class="controls">
+        <button class="btn" id="prev" title="上一首">⏮</button>
+        <button class="btn play" id="play" title="播放/暂停">▶</button>
+        <button class="btn" id="next" title="下一首">⏭</button>
+        <div class="progress" id="progress"><div class="bar" id="bar"></div></div>
+        <div class="time"><span id="cur">0:00</span> / <span id="tot">0:00</span></div>
+        <div class="vol">
+          <span style="color:var(--fg-dim);font-size:12px">🔊</span>
+          <input id="vol" type="range" min="0" max="1" step="0.01" value="0.8" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <ul class="list" id="list">
+    <li style="color:var(--fg-dim);justify-content:center">加载中…</li>
+  </ul>
+
+  <footer>
+    音源：<a href="https://github.com/binbinao/hailuo-music" target="_blank" rel="noopener">binbinao/hailuo-music</a>
+    · 通过 <a href="https://www.jsdelivr.com/" target="_blank" rel="noopener">jsDelivr CDN</a> 加速
+  </footer>
+</div>
+
+<script>
+const REPO = "binbinao/hailuo-music";
+const BRANCH = "main";
+// 用 jsDelivr 加速 GitHub raw，跨域稳定；fallback 到 raw.githubusercontent.com
+const cdnUrl = (path) => `https://cdn.jsdelivr.net/gh/${REPO}@${BRANCH}/${path}`;
+const rawUrl = (path) => `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${path}`;
+
+// 静态曲目元数据（与 README 对齐）。真实文件列表由 README/Contents API 校对
+const TRACKS = [
+  {
+    id: "mj",
+    file: "music_mj_ai.mp3",
+    title: "AI · I'm Alive",
+    desc: "1980s pop · Michael Jackson style · Funky + slap bass + finger snaps",
+  },
+  {
+    id: "ocean",
+    file: "music_ocean.mp3",
+    title: "海浪冥想",
+    desc: "Ambient · 海浪氛围 · 中文人声 · 慢板冥想",
+  },
+];
+
+const audio = new Audio();
+audio.preload = "metadata";
+audio.volume = 0.8;
+audio.crossOrigin = "anonymous";
+
+const $ = (id) => document.getElementById(id);
+const list = $("list");
+const cover = $("cover");
+const playBtn = $("play");
+const bar = $("bar");
+const cur = $("cur");
+const tot = $("tot");
+const progress = $("progress");
+const curTitle = $("curTitle");
+const curDesc = $("curDesc");
+const vol = $("vol");
+
+let current = -1;
+
+function fmt(t) {
+  if (!isFinite(t) || t < 0) t = 0;
+  const m = Math.floor(t / 60), s = Math.floor(t % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function renderList() {
+  list.innerHTML = "";
+  TRACKS.forEach((t, i) => {
+    const li = document.createElement("li");
+    li.dataset.idx = i;
+    li.innerHTML = `
+      <div class="num">${String(i + 1).padStart(2, "0")}</div>
+      <div class="name">${t.title}<small>${t.desc}</small></div>
+      <div class="dur" data-dur="${t.id}">--:--</div>
+    `;
+    li.addEventListener("click", () => playAt(i));
+    list.appendChild(li);
+  });
+}
+
+async function probeDuration(t) {
+  // 用 HEAD 探测 Content-Length 仅供显示文件大小；时长由 metadata 事件给出
+  try {
+    const r = await fetch(cdnUrl(t.file), { method: "HEAD" });
+    if (r.ok) {
+      const sz = +r.headers.get("content-length") || 0;
+      if (sz) {
+        const el = list.querySelector(`[data-dur="${t.id}"]`);
+        if (el) el.textContent = (sz / 1024 / 1024).toFixed(2) + " MB";
+      }
+    }
+  } catch (_) { /* 静默失败不影响播放 */ }
+}
+
+function setActive(i) {
+  [...list.children].forEach((el, idx) => el.classList.toggle("active", idx === i));
+  const t = TRACKS[i];
+  curTitle.textContent = t.title;
+  curDesc.textContent = t.desc;
+  cover.classList.toggle("playing", !audio.paused);
+}
+
+function playAt(i) {
+  if (i < 0 || i >= TRACKS.length) return;
+  current = i;
+  const t = TRACKS[i];
+  audio.src = cdnUrl(t.file);
+  setActive(i);
+  audio.play().catch((e) => {
+    // 自动播放被拒，给用户提示
+    curDesc.textContent = `点击 ▶ 播放（浏览器拦截了自动播放）— ${e.message}`;
+  });
+}
+
+function toggle() {
+  if (current < 0) return playAt(0);
+  if (audio.paused) audio.play(); else audio.pause();
+}
+
+audio.addEventListener("play",  () => { playBtn.textContent = "⏸"; cover.classList.add("playing"); });
+audio.addEventListener("pause", () => { playBtn.textContent = "▶"; cover.classList.remove("playing"); });
+audio.addEventListener("ended", () => playAt((current + 1) % TRACKS.length));
+audio.addEventListener("loadedmetadata", () => {
+  tot.textContent = fmt(audio.duration);
+  const t = TRACKS[current];
+  const el = list && list.querySelector && list.querySelector(`[data-dur="${t.id}"]`);
+  if (el && isFinite(audio.duration)) el.textContent = fmt(audio.duration);
+});
+audio.addEventListener("timeupdate", () => {
+  if (!isFinite(audio.duration)) return;
+  const pct = (audio.currentTime / audio.duration) * 100;
+  bar.style.width = pct + "%";
+  cur.textContent = fmt(audio.currentTime);
+});
+audio.addEventListener("error", () => {
+  // jsDelivr 失败 → fallback 到 raw
+  if (audio.src.includes("cdn.jsdelivr.net")) {
+    const t = TRACKS[current];
+    audio.src = rawUrl(t.file);
+    audio.play().catch(() => {});
+  } else {
+    curDesc.textContent = "音频加载失败，请检查网络或 GitHub 仓库可访问性";
+  }
+});
+
+playBtn.addEventListener("click", toggle);
+$("prev").addEventListener("click", () => playAt((current - 1 + TRACKS.length) % TRACKS.length));
+$("next").addEventListener("click", () => playAt((current + 1) % TRACKS.length));
+progress.addEventListener("click", (e) => {
+  if (!isFinite(audio.duration)) return;
+  const rect = progress.getBoundingClientRect();
+  const ratio = (e.clientX - rect.left) / rect.width;
+  audio.currentTime = Math.max(0, Math.min(1, ratio)) * audio.duration;
+});
+vol.addEventListener("input", () => { audio.volume = +vol.value; });
+
+// 键盘：空格播放/暂停，左右切歌
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.code === "Space") { e.preventDefault(); toggle(); }
+  else if (e.code === "ArrowLeft") playAt((current - 1 + TRACKS.length) % TRACKS.length);
+  else if (e.code === "ArrowRight") playAt((current + 1) % TRACKS.length);
+});
+
+renderList();
+TRACKS.forEach(probeDuration);
+setActive(0);
+</script>
+</body>
+</html>
