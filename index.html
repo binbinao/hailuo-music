@@ -165,16 +165,16 @@
 
   <footer>
     音源：<a href="https://github.com/binbinao/hailuo-music" target="_blank" rel="noopener">binbinao/hailuo-music</a>
-    · 通过 <a href="https://www.jsdelivr.com/" target="_blank" rel="noopener">jsDelivr CDN</a> 加速
+    · 主：GitHub raw，备：<a href="https://www.jsdelivr.com/" target="_blank" rel="noopener">jsDelivr CDN</a>
   </footer>
 </div>
 
 <script>
 const REPO = "binbinao/hailuo-music";
 const BRANCH = "main";
-// 用 jsDelivr 加速 GitHub raw，跨域稳定；fallback 到 raw.githubusercontent.com
-const cdnUrl = (path) => `https://cdn.jsdelivr.net/gh/${REPO}@${BRANCH}/${path}`;
-const rawUrl = (path) => `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${path}`;
+// GitHub raw 优先（瞬时生效、无缓存）；jsDelivr 作 fallback（更快但有缓存延迟）
+const primary = (path) => `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${path}`;
+const fallback = (path) => `https://cdn.jsdelivr.net/gh/${REPO}@${BRANCH}/${path}`;
 
 // 静态曲目元数据（与 README 对齐）。真实文件列表由 README/Contents API 校对
 const TRACKS = [
@@ -235,7 +235,7 @@ function renderList() {
 async function probeDuration(t) {
   // 用 HEAD 探测 Content-Length 仅供显示文件大小；时长由 metadata 事件给出
   try {
-    const r = await fetch(cdnUrl(t.file), { method: "HEAD" });
+    const r = await fetch(primary(t.file), { method: "HEAD" });
     if (r.ok) {
       const sz = +r.headers.get("content-length") || 0;
       if (sz) {
@@ -258,7 +258,7 @@ function playAt(i) {
   if (i < 0 || i >= TRACKS.length) return;
   current = i;
   const t = TRACKS[i];
-  audio.src = cdnUrl(t.file);
+  audio.src = primary(t.file);
   setActive(i);
   audio.play().catch((e) => {
     // 自动播放被拒，给用户提示
@@ -288,9 +288,9 @@ audio.addEventListener("timeupdate", () => {
 });
 audio.addEventListener("error", () => {
   // jsDelivr 失败 → fallback 到 raw
-  if (audio.src.includes("cdn.jsdelivr.net")) {
+  if (audio.src.includes("raw.githubusercontent.com")) {
     const t = TRACKS[current];
-    audio.src = rawUrl(t.file);
+    audio.src = fallback(t.file);
     audio.play().catch(() => {});
   } else {
     curDesc.textContent = "音频加载失败，请检查网络或 GitHub 仓库可访问性";
