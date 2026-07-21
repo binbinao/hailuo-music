@@ -14,5 +14,9 @@
   "music_plains.mp3": {
     "title": "站在旷野",
     "desc": "Ambient · 地平线 · 弦乐与远口琴 · 心被打开"
+  },
+  "music_morning.mp3": {
+    "title": "早安",
+    "desc": "Morning wake-up · 钢琴与指弹吉他 · 90 BPM · 又是新的一天"
   }
 }
