@@ -6,5 +6,13 @@
   "music_ocean.mp3": {
     "title": "海浪冥想",
     "desc": "Ambient · 海浪氛围 · 中文人声 · 慢板冥想"
+  },
+  "music_forest.mp3": {
+    "title": "走进森林",
+    "desc": "Ambient · 林间呼吸 · 钢琴与木吉他 · 让心慢下来"
+  },
+  "music_plains.mp3": {
+    "title": "站在旷野",
+    "desc": "Ambient · 地平线 · 弦乐与远口琴 · 心被打开"
   }
 }
