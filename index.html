@@ -24,8 +24,18 @@
     --accent-2: oklch(0.7 0.18 295);
     --border: oklch(0.26 0.02 250);
     --border-2: oklch(0.32 0.02 250);
-    --danger: oklch(0.68 0.18 25);
-    --ok:     oklch(0.74 0.16 155);
+    --danger: oklch(0.78 0.18 25);
+    --ok:     oklch(0.78 0.16 155);
+
+    /* 加重版 fg-dim 用于正文段落（WCAG AA ≥ 4.5:1） */
+    --fg-dim-strong: oklch(0.74 0.02 250);
+    /* 装饰用 fg-dim（badge 边框、dot 等）保留低对比度版本 */
+    --fg-dim-decorative: oklch(0.65 0.02 250);
+
+    /* 渐变背景的硬编码 rgba → token */
+    --glow-accent: oklch(0.5 0.15 255 / 0.18);
+    --glow-accent-2: oklch(0.5 0.18 295 / 0.15);
+    --drag-mask: oklch(0.1 0.02 250 / 0.85);
 
     /* 特殊 alpha 颜色（带透明度）*/
     --shadow-accent:    oklch(0.5 0.15 255 / 0.4);
@@ -100,8 +110,13 @@
       --accent-2: #b78bff;
       --border: #232838;
       --border-2: #2e3447;
-      --danger: #ff6b6b;
-      --ok:     #5ad19a;
+      --danger: #ff8080;
+      --ok:     #80d4ad;
+      --fg-dim-strong: #b0b8c8;
+      --fg-dim-decorative: #8a93a6;
+      --glow-accent: rgba(124, 156, 255, 0.18);
+      --glow-accent-2: rgba(183, 139, 255, 0.15);
+      --drag-mask: rgba(11, 13, 18, 0.85);
       --shadow-accent:    rgba(124, 156, 255, 0.4);
       --shadow-logo:      rgba(124, 156, 255, 0.35);
       --shadow-cover:     rgba(124, 156, 255, 0.25);
@@ -136,8 +151,8 @@
     margin: 0; font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
     color: var(--fg);
     background:
-      radial-gradient(1200px 600px at 10% -10%, rgba(124,156,255,0.18), transparent 60%),
-      radial-gradient(900px 500px at 110% 10%, rgba(183,139,255,0.15), transparent 55%),
+      radial-gradient(1200px 600px at 10% -10%, var(--glow-accent), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, var(--glow-accent-2), transparent 55%),
       linear-gradient(180deg, var(--bg-0), var(--bg-1));
     -webkit-font-smoothing: antialiased;
   }
@@ -149,14 +164,21 @@
   .sub { color: var(--fg-dim); font-size: var(--fs-xs); margin-top: var(--sp-1); }
   .head-actions { display: flex; gap: var(--sp-2); align-items: center; }
   .icon-btn {
-    color: var(--fg); text-decoration: none; font-size: var(--fs-xs);
-    border: 1px solid var(--border); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-pill);
-    background: var(--white-02); cursor: pointer; font-family: inherit;
-    transition: background-color, border-color var(--dur-fast) var(--ease-out-expo);
-  }
-  .icon-btn:hover { background: var(--white-08); border-color: var(--border-2); }
-  .icon-btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: var(--fg); }
-  .icon-btn.primary:hover { filter: brightness(1.1); }
+      color: var(--fg); text-decoration: none; font-size: var(--fs-xs);
+      border: 1px solid var(--border); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-pill);
+      background: var(--white-02); cursor: pointer; font-family: inherit;
+      transition: background-color var(--dur-fast) var(--ease-out-expo),
+                  border-color var(--dur-fast) var(--ease-out-expo),
+                  transform var(--dur-fast) var(--ease-out-expo),
+                  filter var(--dur-fast) var(--ease-out-expo);
+    }
+    .icon-btn:hover { background: var(--white-08); border-color: var(--border-2); }
+    .icon-btn:active { transform: scale(0.97); }
+    .icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .icon-btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: var(--bg-0); }
+    .icon-btn.primary:hover { filter: brightness(1.1); }
+    .icon-btn.primary:active { transform: scale(0.97); }
+    .icon-btn.primary:disabled { filter: grayscale(0.5); opacity: 0.5; }
 
   .now {
     background: linear-gradient(180deg, var(--bg-2), var(--card-bg-bottom));
@@ -170,23 +192,62 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .meta { min-width: 0; overflow: hidden; }
   .meta .title { font-size: var(--fs-lg); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: var(--lh-tight); }
-  .meta .desc { color: var(--fg-dim); font-size: var(--fs-sm); margin-top: var(--sp-1); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: var(--lh-base); }
+  .meta .desc { color: var(--fg-dim-strong); font-size: var(--fs-sm); margin-top: var(--sp-1); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: var(--lh-base); }
   .meta .desc.is-status { display: block; -webkit-line-clamp: unset; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .now { overflow: hidden; position: relative; }
   .controls { margin-top: var(--sp-4); display: flex; align-items: center; gap: var(--sp-3); }
-  button.btn { background: var(--white-06); color: var(--fg); border: 1px solid var(--border); border-radius: var(--r-pill); width: 42px; height: 42px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: background-color, border-color, transform var(--dur-fast) var(--ease-out-expo); }
-  button.btn:hover { background: var(--white-12); }
-  button.btn.play { width: 52px; height: 52px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: var(--fg); box-shadow: 0 8px 20px var(--shadow-accent); }
-  button.btn.play:hover { transform: scale(1.05); }
-  .progress { flex: 1; height: 6px; background: var(--white-08); border-radius: var(--r-pill); position: relative; cursor: pointer; }
-  .bar { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: var(--r-pill); background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width var(--dur-fast) var(--ease-out-expo); }
-  .time { color: var(--fg-dim); font-variant-numeric: tabular-nums; font-size: var(--fs-xs); min-width: 92px; text-align: right; }
-  .vol { display: flex; align-items: center; gap: var(--sp-2); }
-  .vol input { width: 90px; accent-color: var(--accent); }
-
-  ul.list { list-style: none; padding: 0; margin: var(--sp-5) 0 0; }
-  ul.list li { display: grid; grid-template-columns: 32px 1fr auto auto; gap: var(--sp-3); align-items: center; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); border: 1px solid transparent; cursor: pointer; transition: background-color, border-color var(--dur-fast) var(--ease-out-expo); }
+  button.btn { background: var(--white-06); color: var(--fg); border: 1px solid var(--border); border-radius: var(--r-pill); width: 42px; height: 42px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: background-color var(--dur-fast) var(--ease-out-expo), border-color var(--dur-fast) var(--ease-out-expo), transform var(--dur-fast) var(--ease-out-expo), color var(--dur-fast) var(--ease-out-expo); }
+    button.btn:hover { background: var(--white-12); }
+    button.btn:active { transform: scale(0.94); }
+    button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    button.btn.play { width: 60px; height: 60px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: var(--bg-0); box-shadow: 0 8px 20px var(--shadow-accent); font-size: 22px; }
+    button.btn.play:hover { transform: scale(1.06); }
+    button.btn.play:hover { transform: scale(1.06); }
+        button.btn.play:active { transform: scale(0.98); }
+        button.btn.play:disabled { filter: grayscale(0.5); opacity: 0.6; }
+        .progress { flex: 1; height: 8px; background: var(--white-08); border-radius: var(--r-pill); position: relative; cursor: pointer; transition: height var(--dur-fast) var(--ease-out-expo); }
+        .progress:hover, .progress:focus-within { height: 12px; }
+        .bar { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: var(--r-pill); background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width var(--dur-fast) var(--ease-out-expo); }
+        .time { color: var(--fg-dim-strong); font-variant-numeric: tabular-nums; font-size: var(--fs-xs); min-width: 92px; text-align: right; }
+        .vol { display: flex; align-items: center; gap: var(--sp-2); }
+        .vol input { width: 90px; accent-color: var(--accent); }
+        ul.list { list-style: none; padding: 0; margin: var(--sp-5) 0 0; }
+  ul.list li { display: grid; grid-template-columns: 32px 1fr auto auto; gap: var(--sp-3); align-items: center; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); border: 1px solid transparent; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out-expo), border-color var(--dur-fast) var(--ease-out-expo); }
   ul.list li:hover { background: var(--white-03); }
+  /* Empty state（PR9） */
+  ul.list li.empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: var(--sp-3); padding: var(--sp-7) var(--sp-4); border: 1px dashed var(--border-2);
+    border-radius: var(--r-md); color: var(--fg-dim-strong); text-align: center;
+  }
+  ul.list li.empty-state .empty-icon {
+    font-size: 48px; color: var(--accent); opacity: 0.4; line-height: 1;
+  }
+  ul.list li.empty-state .empty-title {
+    font-size: var(--fs-md); font-weight: 600; color: var(--fg);
+  }
+  ul.list li.empty-state .empty-hint {
+    font-size: var(--fs-sm); color: var(--fg-dim-strong); line-height: var(--lh-relaxed); max-width: 360px;
+  }
+  ul.list li.empty-state .empty-cta { margin-top: var(--sp-2); }
+
+  /* Skeleton placeholder（PR9） */
+  ul.list li.skeleton {
+    cursor: default; pointer-events: none;
+    background: linear-gradient(90deg, var(--white-03) 0%, var(--white-08) 50%, var(--white-03) 100%);
+    background-size: 200% 100%;
+    animation: sk-shimmer 1.4s linear infinite;
+  }
+  ul.list li.skeleton > * { display: block; height: 12px; background: var(--white-06); border-radius: var(--r-sm); }
+  ul.list li.skeleton .sk-num { width: 24px; }
+  ul.list li.skeleton .sk-text { display: grid; gap: var(--sp-1); }
+  ul.list li.skeleton .sk-line-lg { height: 14px; width: 60%; }
+  ul.list li.skeleton .sk-line-sm { height: 10px; width: 35%; }
+  ul.list li.skeleton .sk-time { width: 56px; height: 10px; }
+  @keyframes sk-shimmer {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+  }
   ul.list li.active { background: var(--item-active-bg); border-color: var(--item-active-bd); }
   ul.list li .num { color: var(--fg-dim); font-variant-numeric: tabular-nums; font-size: var(--fs-xs); }
   ul.list li .name { font-weight: 500; overflow: hidden; }
@@ -196,14 +257,14 @@
   ul.list li .src { font-size: 10px; padding: var(--sp-1) var(--sp-2); border-radius: var(--r-pill); border: 1px solid var(--border); color: var(--fg-dim); }
   ul.list li .src.uploaded { color: var(--ok); border-color: var(--src-uploaded-bd); }
 
-  footer { margin-top: var(--sp-5); color: var(--fg-dim); font-size: var(--fs-xs); text-align: center; }
-  footer a { color: var(--fg-dim); } footer a:hover { color: var(--fg); }
+  footer { margin-top: var(--sp-5); color: var(--fg-dim-strong); font-size: var(--fs-xs); text-align: center; }
+  footer a { color: var(--fg-dim-strong); } footer a:hover { color: var(--fg); }
 
   /* Toast */
   .toast-wrap { position: fixed; left: 50%; bottom: var(--sp-5); transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: var(--sp-2); pointer-events: none; }
   .toast { background: var(--toast-bg); border: 1px solid var(--border); padding: var(--sp-2) var(--sp-4); border-radius: var(--r-pill); font-size: var(--fs-sm); backdrop-filter: blur(8px); animation: toast-in var(--dur-base) var(--ease-out-expo); }
-  .toast.ok { border-color: var(--toast-ok-bd); color: var(--ok); }
-  .toast.err { border-color: var(--toast-err-bd); color: var(--danger); }
+  .toast.ok { border-color: var(--toast-ok-bd); color: var(--ok); background: var(--bg-2); }
+  .toast.err { border-color: var(--toast-err-bd); color: var(--danger); background: var(--bg-2); }
   @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
   /* Modal */
@@ -211,7 +272,7 @@
   .modal-bg.show { display: flex; }
   .modal { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-5); max-width: 480px; width: 100%; }
   .modal h2 { margin: 0 0 var(--sp-2); font-size: var(--fs-lg); line-height: var(--lh-tight); }
-  .modal p { color: var(--fg-dim); font-size: var(--fs-sm); margin: 0 0 var(--sp-4); line-height: var(--lh-relaxed); }
+  .modal p { color: var(--fg-dim-strong); font-size: var(--fs-sm); margin: 0 0 var(--sp-4); line-height: var(--lh-relaxed); }
   .modal input[type=password], .modal input[type=text] {
     width: 100%; padding: var(--sp-2) var(--sp-3); border-radius: var(--sp-2);
     background: var(--modal-input-bg); color: var(--fg); border: 1px solid var(--border);
@@ -224,7 +285,7 @@
   /* Drag overlay */
   .drag-overlay {
     position: fixed; inset: 0; z-index: 80;
-    background: rgba(11,13,18,0.85); backdrop-filter: blur(8px);
+    background: var(--drag-mask); backdrop-filter: blur(8px);
     display: none; align-items: center; justify-content: center;
     pointer-events: none;
     border: 3px dashed var(--accent);
@@ -233,12 +294,17 @@
   .drag-overlay .hint { font-size: var(--fs-xl); color: var(--accent); text-align: center; }
   .drag-overlay .hint small { display: block; color: var(--fg-dim); font-size: var(--fs-sm); margin-top: var(--sp-2); font-weight: 400; }
 
-  /* ===== Marquee 长标题滚动（Task 3） ===== */
+  /* ===== Marquee 长标题滚动（Task 3） =====
+     - duration 由 JS 在 applyMarqueeIfOverflow 中根据文本宽度动态设置（约 35 px/s 恒速）
+     - will-change 提示合成器层（避免移动端低端机掉帧）
+     - mask fade 双侧渐隐，避免硬切感 */
   .meta .title.marquee {
     text-overflow: clip;
-    animation: marquee var(--dur-slow) linear infinite;
+    animation: marquee var(--marquee-duration, 18s) linear infinite;
+    animation-delay: var(--marquee-delay, 1.5s);
     animation-play-state: var(--marquee-state, running);
     cursor: pointer;
+    will-change: transform;
     -webkit-mask-image: linear-gradient(to right, transparent 0, var(--mask-fade) var(--sp-5), var(--mask-fade) calc(100% - var(--sp-5)), transparent 100%);
     mask-image: linear-gradient(to right, transparent 0, var(--mask-fade) var(--sp-5), var(--mask-fade) calc(100% - var(--sp-5)), transparent 100%);
   }
@@ -247,9 +313,10 @@
     --marquee-state: paused;
     animation-play-state: paused;
   }
+  /* 滚过自身整段宽，端点由 JS 通过 delay 控制停顿 */
   @keyframes marquee {
     from { transform: translateX(0); }
-    to   { transform: translateX(calc(-100% + 100cqw - var(--sp-5) * 2)); }
+    to   { transform: translateX(calc(-100% + var(--marquee-shift, 100%))); }
   }
 
   /* ===== Expand drawer（Task 3.5） ===== */
@@ -300,7 +367,8 @@
       scroll-behavior: auto !important;
     }
     .cover.playing { animation: none; }
-    .meta .title.marquee { animation: none; }
+    /* marquee 保留但降到 60s（很慢但仍滚动），其他动画停止 */
+    .meta .title.marquee { animation-duration: 60s; }
   }
 
   /* ===== 响应式 ===== */
@@ -421,7 +489,7 @@
   </div>
 </div>
 
-<div class="toast-wrap" id="toastWrap"></div>
+<div class="toast-wrap" id="toastWrap" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <div class="wrap">
   <header>
@@ -465,8 +533,10 @@
     </div>
   </section>
 
-  <ul class="list" id="list">
-    <li style="color:var(--fg-dim);justify-content:center">加载中…</li>
+  <ul class="list" id="list" aria-busy="true">
+    <li class="skeleton" aria-hidden="true"><span class="sk-num"></span><span class="sk-text"><span class="sk-line sk-line-lg"></span><span class="sk-line sk-line-sm"></span></span><span class="sk-time"></span></li>
+    <li class="skeleton" aria-hidden="true"><span class="sk-num"></span><span class="sk-text"><span class="sk-line sk-line-lg"></span><span class="sk-line sk-line-sm"></span></span><span class="sk-time"></span></li>
+    <li class="skeleton" aria-hidden="true"><span class="sk-num"></span><span class="sk-text"><span class="sk-line sk-line-lg"></span><span class="sk-line sk-line-sm"></span></span><span class="sk-time"></span></li>
   </ul>
 
   <footer>
@@ -530,6 +600,8 @@ let pendingFile = null;
 function toast(msg, kind = "") {
   const t = document.createElement("div");
   t.className = "toast " + kind;
+  // 错误用 role=alert 让屏幕阅读器立即朗读（不等 polite 队列）
+  if (kind === "err") t.setAttribute("role", "alert");
   t.textContent = msg;
   els.toastWrap.appendChild(t);
   setTimeout(() => { t.style.opacity = "0"; t.style.transition = "opacity .3s"; }, 2400);
@@ -542,12 +614,22 @@ function fmt(t) {
 }
 
 function renderList() {
+  els.list.removeAttribute("aria-busy");
   els.list.innerHTML = "";
   if (!TRACKS.length) {
     const li = document.createElement("li");
-    li.style.cssText = "color:var(--fg-dim);justify-content:center;cursor:default";
-    li.textContent = "仓库里还没有 MP3 — 拖入文件上传吧";
+    li.className = "empty-state";
+    li.innerHTML = `
+      <div class="empty-icon" aria-hidden="true">♪</div>
+      <div class="empty-body">
+        <div class="empty-title">仓库里还没有 MP3</div>
+        <div class="empty-hint">点右上角 <b>＋ 上传</b>，或拖入文件。首次使用需先在 ⚙ 里粘贴 GitHub Token。</div>
+        <button type="button" class="icon-btn primary empty-cta" id="emptyUploadBtn">＋ 上传第一首音乐</button>
+      </div>`;
     els.list.appendChild(li);
+    document.getElementById("emptyUploadBtn")?.addEventListener("click", () => {
+      document.getElementById("uploadBtn")?.click();
+    });
     return;
   }
   TRACKS.forEach((t, i) => {
@@ -604,8 +686,7 @@ function setCurStatus(msg) {
 function applyMarqueeIfOverflow() {
   const el = els.curTitle;
   el.classList.remove("marquee");
-  // 测原始内容宽度（绕过 ellipsis 截断）：
-  // 用一个 hidden 镜像测 scrollWidth
+  // 测原始内容宽度（绕过 ellipsis 截断）：用一个 hidden 镜像 span
   const probe = document.createElement("span");
   const cs = getComputedStyle(el);
   probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;left:-9999px;top:-9999px;`
@@ -614,9 +695,19 @@ function applyMarqueeIfOverflow() {
   document.body.appendChild(probe);
   const fullW = probe.scrollWidth;
   probe.remove();
-  if (fullW > el.clientWidth + 1) {
-    el.classList.add("marquee");
-  }
+
+  const clientW = el.clientWidth;
+  if (fullW <= clientW + 1) return; // 不溢出，不触发 marquee
+
+  el.classList.add("marquee");
+  // 恒速约 35 px/s：根据溢出宽度算 duration
+  const overflow = fullW - clientW;
+  const PX_PER_SEC = 35;
+  const duration = Math.max(6, Math.min(30, overflow / PX_PER_SEC));
+  el.style.setProperty("--marquee-duration", `${duration.toFixed(1)}s`);
+  // mask fade 宽度是 --sp-5，所以"滚过自己整段宽"对应的 translate 是 -(fullW - 2*sp-5)
+  const shift = `${Math.max(0, fullW - 2 * 24)}px`;
+  el.style.setProperty("--marquee-shift", shift);
 }
 
 function toggleExpandDrawer() {
@@ -666,7 +757,15 @@ audio.addEventListener("error", () => {
     audio.src = fallback(TRACKS[current].file);
     audio.play().catch(() => {});
   } else {
-    setCurStatus("音频加载失败");
+    // 区分错误类型给具体建议
+    const code = audio.error?.code;
+    const reasons = {
+      1: "网络断开，请检查 WiFi 或稍后重试",
+      2: "浏览器解码失败 — 这首 MP3 文件可能损坏，试试 Chrome 或 Edge",
+      3: "音频源不存在 — 仓库里可能没这首曲子，刷新看看",
+      4: "浏览器不支持该音频格式",
+    };
+    setCurStatus(reasons[code] || `音频加载失败（code=${code ?? "?"}），已切换 CDN 重试`);
   }
 });
 
@@ -687,8 +786,21 @@ document.addEventListener("keydown", e => {
 });
 
 // ===== Track loading =====
+function renderSkeleton(count = 3) {
+  els.list.setAttribute("aria-busy", "true");
+  els.list.innerHTML = "";
+  for (let i = 0; i < count; i++) {
+    const li = document.createElement("li");
+    li.className = "skeleton";
+    li.setAttribute("aria-hidden", "true");
+    li.innerHTML = `<span class="sk-num"></span>
+      <span class="sk-text"><span class="sk-line sk-line-lg"></span><span class="sk-line sk-line-sm"></span></span>
+      <span class="sk-time"></span>`;
+    els.list.appendChild(li);
+  }
+}
 async function loadTracks() {
-  els.list.innerHTML = `<li style="color:var(--fg-dim);justify-content:center">加载中…</li>`;
+  renderSkeleton(3);
   // 1) tracks.json 元数据（可选）—— 走 Contents API 避免 raw 缓存延迟
   let meta = {};
   try {
@@ -739,9 +851,66 @@ async function loadTracks() {
 
 $("refreshBtn").addEventListener("click", loadTracks);
 
+// ===== Modal 焦点管理（PR2） =====
+let modalReturnFocus = null; // 记录打开 modal 前的活动元素，关闭时归还
+
+function trapFocus(modal) {
+  const focusables = () => modal.querySelectorAll(
+    'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
+  );
+  const first = focusables()[0];
+  const last = focusables()[focusables().length - 1];
+  return (e) => {
+    if (e.key !== 'Tab') return;
+    if (focusables().length === 0) return;
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault(); first.focus();
+    }
+  };
+}
+
+let activeTrapHandler = null;
+function openModal(modalEl, focusTarget) {
+  modalReturnFocus = document.activeElement;
+  modalEl.classList.add("show");
+  activeTrapHandler = trapFocus(modalEl);
+  modalEl.addEventListener("keydown", activeTrapHandler);
+  modalEl.addEventListener("keydown", escClose);
+  // 下一帧聚焦，让浏览器先完成 layout
+  requestAnimationFrame(() => {
+    if (focusTarget) focusTarget.focus();
+    else modalEl.querySelector('input, button')?.focus();
+  });
+}
+function closeModal(modalEl) {
+  modalEl.classList.remove("show");
+  if (activeTrapHandler) {
+    modalEl.removeEventListener("keydown", activeTrapHandler);
+    modalEl.removeEventListener("keydown", escClose);
+    activeTrapHandler = null;
+  }
+  if (modalReturnFocus && modalReturnFocus.focus) {
+    modalReturnFocus.focus();
+  }
+  modalReturnFocus = null;
+}
+function escClose(e) {
+  if (e.key === "Escape") {
+    if (els.uploadModal.classList.contains("show")) closeUploadModal();
+    else if (els.patModal.classList.contains("show")) closePatModal();
+    else if (els.expandDrawer.classList.contains("show")) els.expandDrawer.classList.remove("show");
+  }
+}
+
 // ===== PAT modal =====
-function openPatModal() { els.patModal.classList.add("show"); els.patInput.value = ""; els.patWarn.textContent = ""; els.patInput.focus(); }
-function closePatModal() { els.patModal.classList.remove("show"); }
+function openPatModal() {
+  els.patInput.value = "";
+  els.patWarn.textContent = "";
+  openModal(els.patModal, els.patInput);
+}
+function closePatModal() { closeModal(els.patModal); }
 $("settingsBtn").addEventListener("click", openPatModal);
 els.patSave.addEventListener("click", () => {
   const v = els.patInput.value.trim();
@@ -771,10 +940,9 @@ function openUploadModal(file) {
   els.upTitle.value = prettifyName(file.name);
   els.upDesc.value = "";
   els.upWarn.textContent = "";
-  els.uploadModal.classList.add("show");
-  els.upTitle.focus();
+  openModal(els.uploadModal, els.upTitle);
 }
-function closeUploadModal() { els.uploadModal.classList.remove("show"); pendingFile = null; }
+function closeUploadModal() { closeModal(els.uploadModal); pendingFile = null; }
 els.upCancel.addEventListener("click", closeUploadModal);
 els.uploadModal.addEventListener("click", e => { if (e.target === els.uploadModal) closeUploadModal(); });
 $("uploadBtn").addEventListener("click", () => {
