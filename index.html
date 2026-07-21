@@ -202,7 +202,6 @@
     button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
     button.btn.play { width: 60px; height: 60px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: var(--bg-0); box-shadow: 0 8px 20px var(--shadow-accent); font-size: 22px; }
     button.btn.play:hover { transform: scale(1.06); }
-    button.btn.play:hover { transform: scale(1.06); }
         button.btn.play:active { transform: scale(0.98); }
         button.btn.play:disabled { filter: grayscale(0.5); opacity: 0.6; }
         .progress { flex: 1; height: 8px; background: var(--white-08); border-radius: var(--r-pill); position: relative; cursor: pointer; transition: height var(--dur-fast) var(--ease-out-expo); }
@@ -212,7 +211,7 @@
         .vol { display: flex; align-items: center; gap: var(--sp-2); }
         .vol input { width: 90px; accent-color: var(--accent); }
         ul.list { list-style: none; padding: 0; margin: var(--sp-5) 0 0; }
-  ul.list li { display: grid; grid-template-columns: 32px 1fr auto auto; gap: var(--sp-3); align-items: center; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); border: 1px solid transparent; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out-expo), border-color var(--dur-fast) var(--ease-out-expo); }
+  ul.list li { display: grid; grid-template-columns: 32px 1fr auto; gap: var(--sp-3); align-items: center; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); border: 1px solid transparent; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out-expo), border-color var(--dur-fast) var(--ease-out-expo); }
   ul.list li:hover { background: var(--white-03); }
   /* Empty state（PR9） */
   ul.list li.empty-state {
@@ -253,9 +252,8 @@
   ul.list li .name { font-weight: 500; overflow: hidden; }
   ul.list li .name > .title-text { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   ul.list li .name > small { display: block; color: var(--fg-dim); font-weight: 400; font-size: var(--fs-xs); margin-top: var(--sp-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  ul.list li .dur { color: var(--fg-dim); font-variant-numeric: tabular-nums; font-size: var(--fs-xs); }
-  ul.list li .src { font-size: 10px; padding: var(--sp-1) var(--sp-2); border-radius: var(--r-pill); border: 1px solid var(--border); color: var(--fg-dim); }
-  ul.list li .src.uploaded { color: var(--ok); border-color: var(--src-uploaded-bd); }
+  ul.list li .dur { color: var(--fg-dim-strong); font-variant-numeric: tabular-nums; font-size: var(--fs-xs); }
+  /* 旧 .src 元素已删除（v3.1 无意义），保留空规则以防 external CSS 引用 */
 
   footer { margin-top: var(--sp-5); color: var(--fg-dim-strong); font-size: var(--fs-xs); text-align: center; }
   footer a { color: var(--fg-dim-strong); } footer a:hover { color: var(--fg); }
@@ -427,10 +425,9 @@
     }
 
     /* 列表项：紧凑 */
-    ul.list li { grid-template-columns: 24px 1fr; padding: var(--sp-3) var(--sp-3); gap: var(--sp-3); }
+    ul.list li { grid-template-columns: 24px 1fr auto; padding: var(--sp-3) var(--sp-3); gap: var(--sp-3); }
     ul.list li .num { font-size: 11px; }
-    ul.list li .dur,
-    ul.list li .src { display: none; }
+    ul.list li .dur { color: var(--fg-dim-strong); font-size: 11px; }
     ul.list li .name { font-size: var(--fs-base); }
     ul.list li .name small { font-size: 11px; }
 
@@ -642,7 +639,6 @@ function renderList() {
         <small>${escapeHtml(t.desc || "")}</small>
       </div>
       <div class="dur">${fmtBytes(t.size)}</div>
-      <div class="src ${t.uploaded ? "uploaded" : ""}">${t.uploaded ? "上传" : "内置"}</div>
     `;
     li.addEventListener("click", () => playAt(i));
     els.list.appendChild(li);
@@ -833,7 +829,6 @@ async function loadTracks() {
           desc: m.desc || `SHA ${it.sha.slice(0,7)}`,
           size: it.size,
           sha: it.sha,
-          uploaded: !!m.title, // 有自定义 title 视为上传过
         };
       })
       .sort((a, b) => a.file.localeCompare(b.file));
