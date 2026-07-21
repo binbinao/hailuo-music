@@ -23,5 +23,10 @@
     "title": "早安",
     "desc": "Morning wake-up · 钢琴与指弹吉他 · 90 BPM · 又是新的一天",
     "cover": "music_morning.jpg"
+  },
+  "music_sunrise.mp3": {
+    "title": "九点阳光",
+    "desc": "Commute · Acoustic guitar + ukulele · 120 BPM · 走在路上",
+    "cover": "music_sunrise.jpg"
   }
 }
