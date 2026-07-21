@@ -28,5 +28,10 @@
     "title": "九点阳光",
     "desc": "Commute · Acoustic guitar + ukulele · 120 BPM · 走在路上",
     "cover": "music_sunrise.jpg"
+  },
+  "music_jue.mp3": {
+    "title": "角音疏肝",
+    "desc": "五音疗愈 · 角调 Jue mode · 古琴与洞箫 · 疏肝理气解郁",
+    "cover": "music_jue.jpg"
   }
 }
