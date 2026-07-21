@@ -1,22 +1,27 @@
 {
   "music_mj_ai.mp3": {
     "title": "AI · I'm Alive",
-    "desc": "1980s pop · Michael Jackson style · Funky + slap bass + finger snaps"
+    "desc": "1980s pop · Michael Jackson style · Funky + slap bass + finger snaps",
+    "cover": "music_mj_ai.jpg"
   },
   "music_ocean.mp3": {
     "title": "海浪冥想",
-    "desc": "Ambient · 海浪氛围 · 中文人声 · 慢板冥想"
+    "desc": "Ambient · 海浪氛围 · 中文人声 · 慢板冥想",
+    "cover": "music_ocean.jpg"
   },
   "music_forest.mp3": {
     "title": "走进森林",
-    "desc": "Ambient · 林间呼吸 · 钢琴与木吉他 · 让心慢下来"
+    "desc": "Ambient · 林间呼吸 · 钢琴与木吉他 · 让心慢下来",
+    "cover": "music_forest.jpg"
   },
   "music_plains.mp3": {
     "title": "站在旷野",
-    "desc": "Ambient · 地平线 · 弦乐与远口琴 · 心被打开"
+    "desc": "Ambient · 地平线 · 弦乐与远口琴 · 心被打开",
+    "cover": "music_plains.jpg"
   },
   "music_morning.mp3": {
     "title": "早安",
-    "desc": "Morning wake-up · 钢琴与指弹吉他 · 90 BPM · 又是新的一天"
+    "desc": "Morning wake-up · 钢琴与指弹吉他 · 90 BPM · 又是新的一天",
+    "cover": "music_morning.jpg"
   }
 }
