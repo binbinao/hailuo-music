@@ -38,5 +38,10 @@
     "title": "百乐之王",
     "desc": "唢呐独奏 · 红事白事快板 · 130 BPM · 霸气嘹亮",
     "cover": "music_suona.jpg"
+  },
+  "music_fate.mp3": {
+    "title": "小提琴命运",
+    "desc": "贝多芬第五交响曲小提琴版 · c 小调 · 4/4 拍 · 命运动机 da-da-da-DUM",
+    "cover": "music_fate.jpg"
   }
 }
