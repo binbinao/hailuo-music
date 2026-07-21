@@ -230,6 +230,23 @@
   }
   ul.list li.empty-state .empty-cta { margin-top: var(--sp-2); }
 
+  /* Pager（每页 5 首） */
+  .pager {
+    display: flex; align-items: center; justify-content: center; gap: var(--sp-3);
+    margin-top: var(--sp-4); padding: var(--sp-2) 0;
+  }
+  .pager[hidden] { display: none; }
+  .pager .pager-btn {
+    width: 36px; height: 36px; font-size: 18px; line-height: 1; padding: 0;
+  }
+  .pager .pager-btn:disabled {
+    opacity: 0.3; cursor: not-allowed;
+  }
+  .pager .pager-info {
+    color: var(--fg-dim-strong); font-variant-numeric: tabular-nums;
+    font-size: var(--fs-sm); min-width: 92px; text-align: center;
+  }
+
   /* Skeleton placeholder（PR9） */
   ul.list li.skeleton {
     cursor: default; pointer-events: none;
@@ -533,8 +550,13 @@
   <ul class="list" id="list" aria-busy="true">
     <li class="skeleton" aria-hidden="true"><span class="sk-num"></span><span class="sk-text"><span class="sk-line sk-line-lg"></span><span class="sk-line sk-line-sm"></span></span><span class="sk-time"></span></li>
     <li class="skeleton" aria-hidden="true"><span class="sk-num"></span><span class="sk-text"><span class="sk-line sk-line-lg"></span><span class="sk-line sk-line-sm"></span></span><span class="sk-time"></span></li>
-    <li class="skeleton" aria-hidden="true"><span class="sk-num"></span><span class="sk-text"><span class="sk-line sk-line-lg"></span><span class="sk-line sk-line-sm"></span></span><span class="sk-time"></span></li>
   </ul>
+
+  <nav class="pager" id="pager" aria-label="曲目分页" hidden>
+    <button class="icon-btn pager-btn" id="pagerPrev" aria-label="上一页">‹</button>
+    <span class="pager-info" id="pagerInfo">第 1 / 1 页</span>
+    <button class="icon-btn pager-btn" id="pagerNext" aria-label="下一页">›</button>
+  </nav>
 
   <footer>
     音源：<a href="https://github.com/binbinao/hailuo-music" target="_blank" rel="noopener">binbinao/hailuo-music</a>
@@ -582,6 +604,7 @@ const els = {
   curTitle: $("curTitle"), curDesc: $("curDesc"), vol: $("vol"),
   fullTitle: $("fullTitle"), fullDesc: $("fullDesc"), expandDrawer: $("expandDrawer"),
   toastWrap: $("toastWrap"),
+  pager: $("pager"), pagerPrev: $("pagerPrev"), pagerNext: $("pagerNext"), pagerInfo: $("pagerInfo"),
   patModal: $("patModal"), patInput: $("patInput"), patWarn: $("patWarn"),
   patSave: $("patSave"), patClear: $("patClear"),
   uploadModal: $("uploadModal"), upInfo: $("uploadInfo"),
@@ -592,6 +615,7 @@ const els = {
 
 let TRACKS = [];
 let current = -1;
+let currentPage = 1;
 let pendingFile = null;
 
 function toast(msg, kind = "") {
@@ -627,9 +651,22 @@ function renderList() {
     document.getElementById("emptyUploadBtn")?.addEventListener("click", () => {
       document.getElementById("uploadBtn")?.click();
     });
+    // 空列表时隐藏分页
+    els.pager.hidden = true;
     return;
   }
-  TRACKS.forEach((t, i) => {
+
+  // 分页：每页 PAGE_SIZE 首
+  const PAGE_SIZE = 5;
+  const totalPages = Math.max(1, Math.ceil(TRACKS.length / PAGE_SIZE));
+  // currentPage 越界修正
+  if (currentPage < 1) currentPage = 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+  const startIdx = (currentPage - 1) * PAGE_SIZE;
+  const pageItems = TRACKS.slice(startIdx, startIdx + PAGE_SIZE);
+
+  pageItems.forEach((t, j) => {
+    const i = startIdx + j; // 全局真实索引
     const li = document.createElement("li");
     li.dataset.idx = i;
     li.innerHTML = `
@@ -643,6 +680,16 @@ function renderList() {
     li.addEventListener("click", () => playAt(i));
     els.list.appendChild(li);
   });
+
+  // 更新分页控件：只在多页时显示
+  if (totalPages > 1) {
+    els.pager.hidden = false;
+    els.pagerInfo.textContent = `第 ${currentPage} / ${totalPages} 页 · 共 ${TRACKS.length} 首`;
+    els.pagerPrev.disabled = currentPage <= 1;
+    els.pagerNext.disabled = currentPage >= totalPages;
+  } else {
+    els.pager.hidden = true;
+  }
 }
 
 function escapeHtml(s) {
@@ -650,6 +697,14 @@ function escapeHtml(s) {
 }
 
 function setActive(i) {
+  // 如果目标曲目不在当前页，先翻页
+  const PAGE_SIZE = 5;
+  const targetPage = Math.floor(i / PAGE_SIZE) + 1;
+  if (targetPage !== currentPage) {
+    currentPage = targetPage;
+    renderList(); // 会重新渲染 + 保留 current 高亮（重新执行下面逻辑）
+    return;
+  }
   [...els.list.children].forEach((el, idx) => el.classList.toggle("active", idx === i));
   if (i >= 0 && TRACKS[i]) {
     setCurInfo(TRACKS[i].title, TRACKS[i].desc || "");
@@ -725,6 +780,13 @@ window.addEventListener("resize", applyMarqueeIfOverflow);
 function playAt(i) {
   if (i < 0 || i >= TRACKS.length) return;
   current = i;
+  // 确保目标曲目所在页是当前页
+  const PAGE_SIZE = 5;
+  const targetPage = Math.floor(i / PAGE_SIZE) + 1;
+  if (targetPage !== currentPage) {
+    currentPage = targetPage;
+    renderList();
+  }
   audio.src = primary(TRACKS[i].file);
   setActive(i);
   audio.play().catch(e => {
@@ -768,6 +830,17 @@ audio.addEventListener("error", () => {
 els.playBtn.addEventListener("click", toggle);
 $("prev").addEventListener("click", () => playAt((current - 1 + TRACKS.length) % TRACKS.length));
 $("next").addEventListener("click", () => playAt((current + 1) % TRACKS.length));
+
+// ===== Pager 事件 =====
+function goPage(delta) {
+  const totalPages = Math.max(1, Math.ceil(TRACKS.length / 5));
+  const np = Math.max(1, Math.min(totalPages, currentPage + delta));
+  if (np === currentPage) return;
+  currentPage = np;
+  renderList();
+}
+els.pagerPrev.addEventListener("click", () => goPage(-1));
+els.pagerNext.addEventListener("click", () => goPage(1));
 els.progress.addEventListener("click", e => {
   if (!isFinite(audio.duration)) return;
   const r = els.progress.getBoundingClientRect();
