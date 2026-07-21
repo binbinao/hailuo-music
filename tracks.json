@@ -33,5 +33,10 @@
     "title": "角音疏肝",
     "desc": "五音疗愈 · 角调 Jue mode · 古琴与洞箫 · 疏肝理气解郁",
     "cover": "music_jue.jpg"
+  },
+  "music_suona.mp3": {
+    "title": "百乐之王",
+    "desc": "唢呐独奏 · 红事白事快板 · 130 BPM · 霸气嘹亮",
+    "cover": "music_suona.jpg"
   }
 }
