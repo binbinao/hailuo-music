@@ -870,49 +870,96 @@ function renderSkeleton(count = 3) {
 }
 async function loadTracks() {
   renderSkeleton(3);
-  // 1) tracks.json 元数据（可选）—— 走 Contents API 避免 raw 缓存延迟
+
+  // 用 AbortController 给 fetch 加超时（避免 GFW/限流时卡 30+ 秒）
+  const TIMEOUT_MS = 8000;
+  const withTimeout = (promise) => {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+    return promise.finally(() => clearTimeout(tid)).catch(e => ({ __timeout: true, error: e, signal: ctrl.signal }));
+  };
+  const isAbortError = (e) => e?.__timeout || e?.name === "AbortError" || /aborted|failed to fetch|networkerror/i.test(String(e?.message || e));
+
+  // 1) tracks.json 元数据（推荐路径，因为 tracks.json 几乎不变，可走 raw 直连）
   let meta = {};
-  try {
-    const r = await fetch(`https://api.github.com/repos/${REPO}/contents/tracks.json?ref=${BRANCH}`, {
+  let tracksMetaErr = null;
+  // 先试 raw.githubusercontent.com（直连快、没限流）
+  const rawMeta = await withTimeout(fetch(primary("tracks.json"), { cache: "no-store" }));
+  if (!rawMeta?.__timeout && rawMeta?.ok) {
+    try { meta = await rawMeta.json(); } catch (e) { tracksMetaErr = e; }
+  } else {
+    // 兜底走 Contents API
+    const apiMeta = await withTimeout(fetch(`https://api.github.com/repos/${REPO}/contents/tracks.json?ref=${BRANCH}`, {
       headers: { "Accept": "application/vnd.github+json" }
-    });
-    if (r.ok) {
-      const j = await r.json();
-      // base64 解码出的是 UTF-8 字节序列，需正确还原中文等多字节字符
-      const bytes = Uint8Array.from(atob(j.content.replace(/\n/g, "")), c => c.charCodeAt(0));
-      const txt = new TextDecoder("utf-8").decode(bytes);
-      meta = JSON.parse(txt);
+    }));
+    if (!apiMeta?.__timeout && apiMeta?.ok) {
+      try {
+        const j = await apiMeta.json();
+        const bytes = Uint8Array.from(atob(j.content.replace(/\n/g, "")), c => c.charCodeAt(0));
+        meta = JSON.parse(new TextDecoder("utf-8").decode(bytes));
+      } catch (e) { tracksMetaErr = e; }
+    } else {
+      tracksMetaErr = apiMeta?.error || new Error("tracks.json 拉取超时");
     }
-  } catch {}
-  // 2) Contents API 列文件
-  try {
-    const r = await fetch(`https://api.github.com/repos/${REPO}/contents/?ref=${BRANCH}`, {
-      headers: { "Accept": "application/vnd.github+json" }
-    });
-    if (!r.ok) throw new Error("API " + r.status);
-    const items = await r.json();
-    TRACKS = items
-      .filter(it => it.name.toLowerCase().endsWith(".mp3"))
-      .map(it => {
-        const m = meta[it.name] || {};
-        return {
-          id: it.name.replace(/\.mp3$/i, ""),
-          file: it.name,
-          title: m.title || prettifyName(it.name),
-          desc: m.desc || `SHA ${it.sha.slice(0,7)}`,
-          size: it.size,
-          sha: it.sha,
-        };
-      })
-      .sort((a, b) => a.file.localeCompare(b.file));
-  } catch (e) {
-    // 兜底：API 失败时用静态内置
-    TRACKS = [
-      { file: "music_mj_ai.mp3", title: "AI · I'm Alive", desc: "MJ 风格 · AI 之歌", size: 4692313 },
-      { file: "music_ocean.mp3", title: "海浪冥想", desc: "Ambient · 海浪氛围", size: 2941899 },
-    ];
-    toast("GitHub API 拉取失败，使用静态内置曲目", "err");
   }
+
+  // 2) Contents API 列文件（同样的两路策略）
+  let items = null;
+  let listErr = null;
+  // 先试 raw.githubusercontent.com 列表（直接拼已知文件清单，更稳）
+  // 因为 Contents API 必须枚举仓库，不适合 raw 列表，所以这里直接用 API
+  const listResp = await withTimeout(fetch(`https://api.github.com/repos/${REPO}/contents/?ref=${BRANCH}`, {
+    headers: { "Accept": "application/vnd.github+json" }
+  }));
+  if (!listResp?.__timeout && listResp?.ok) {
+    try { items = await listResp.json(); } catch (e) { listErr = e; }
+  } else {
+    listErr = listResp?.error || new Error("Contents API 拉取超时");
+  }
+
+  if (!items) {
+    // 兜底：API 失败时用静态内置（13 首，覆盖五音疗愈全套）
+    TRACKS = [
+      { file: "music_mj_ai.mp3", title: "AI · I'm Alive", desc: "1980s pop · MJ", size: 4692313 },
+      { file: "music_ocean.mp3", title: "海浪冥想", desc: "Ambient · 海浪", size: 2941899 },
+      { file: "music_forest.mp3", title: "走进森林", desc: "Ambient · 林间", size: 5246526 },
+      { file: "music_plains.mp3", title: "站在旷野", desc: "Ambient · 草甸", size: 4859496 },
+      { file: "music_morning.mp3", title: "早安", desc: "Morning wake-up", size: 3744381 },
+      { file: "music_sunrise.mp3", title: "九点阳光", desc: "Commute · 120 BPM", size: 2312453 },
+      { file: "music_jue.mp3", title: "角音疏肝", desc: "五音 · 角", size: 5494794 },
+      { file: "music_shang.mp3", title: "商音润肺", desc: "五音 · 商", size: 4845286 },
+      { file: "music_suona.mp3", title: "百乐之王", desc: "唢呐独奏", size: 5370242 },
+      { file: "music_fate.mp3", title: "小提琴命运", desc: "贝多芬 5th 弦乐版", size: 4439029 },
+      { file: "music_zhi.mp3", title: "徵音养心", desc: "五音 · 徵", size: 14962406 },
+      { file: "music_gong.mp3", title: "宫音健脾", desc: "五音 · 宫", size: 5121975 },
+      { file: "music_yu.mp3", title: "羽音补肾", desc: "五音 · 羽", size: 14638905 },
+    ];
+    // 区分错误类型给具体提示
+    const isNetwork = isAbortError(listErr);
+    const msg = isNetwork
+      ? "网络超时（8s）— 国内访问 GitHub 可能受限，已用本地兜底"
+      : `GitHub 拉取失败（${listErr?.message || "未知"}），已用本地兜底`;
+    toast(msg, "err");
+    renderList();
+    setActive(current);
+    return;
+  }
+
+  TRACKS = items
+    .filter(it => it.name.toLowerCase().endsWith(".mp3"))
+    .map(it => {
+      const m = meta[it.name] || {};
+      return {
+        id: it.name.replace(/\.mp3$/i, ""),
+        file: it.name,
+        title: m.title || prettifyName(it.name),
+        desc: m.desc || `SHA ${it.sha.slice(0,7)}`,
+        size: it.size,
+        sha: it.sha,
+      };
+    })
+    .sort((a, b) => a.file.localeCompare(b.file));
+
   renderList();
   setActive(current);
 }
