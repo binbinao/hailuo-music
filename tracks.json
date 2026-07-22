@@ -43,5 +43,10 @@
     "title": "小提琴命运",
     "desc": "贝多芬第五交响曲小提琴版 · c 小调 · 4/4 拍 · 命运动机 da-da-da-DUM",
     "cover": "music_fate.jpg"
+  },
+  "music_shang.mp3": {
+    "title": "商音润肺",
+    "desc": "五音疗愈 · 商调 Shang mode · 编钟磬笙 · 润肺降气化痰",
+    "cover": "music_shang.jpg"
   }
 }
