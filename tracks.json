@@ -48,5 +48,20 @@
     "title": "商音润肺",
     "desc": "五音疗愈 · 商调 Shang mode · 编钟磬笙 · 润肺降气化痰",
     "cover": "music_shang.jpg"
+  },
+  "music_zhi.mp3": {
+    "title": "徵音养心",
+    "desc": "五音疗愈 · 徵调 Zhi mode · 古筝琵琶 · 养心安神",
+    "cover": "music_zhi.jpg"
+  },
+  "music_gong.mp3": {
+    "title": "宫音健脾",
+    "desc": "五音疗愈 · 宫调 Gong mode · 埙陶笛葫芦丝 · 健脾和胃",
+    "cover": "music_gong.jpg"
+  },
+  "music_yu.mp3": {
+    "title": "羽音补肾",
+    "desc": "五音疗愈 · 羽调 Yu mode · 箫笛低音弦 · 补肾固本",
+    "cover": "music_yu.jpg"
   }
 }
