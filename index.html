@@ -436,7 +436,8 @@
     .head-actions .icon-btn { font-size: 11px; padding: var(--sp-1) var(--sp-2); }
     .head-actions #refreshBtn,
     .head-actions #uploadBtn,
-    .head-actions #settingsBtn {
+    .head-actions #settingsBtn,
+    .head-actions #ttsBtn {
       padding: var(--sp-2) var(--sp-2);
       min-width: 32px;
     }
@@ -462,7 +463,8 @@
     .meta .title.marquee { --dur-slow: 8s; }
     header .head-actions #uploadBtn,
     header .head-actions #refreshBtn,
-    header .head-actions #settingsBtn {
+    header .head-actions #settingsBtn,
+    header .head-actions #ttsBtn {
       padding: var(--sp-1) var(--sp-2);
     }
   }
@@ -505,6 +507,27 @@
 
 <div class="toast-wrap" id="toastWrap" role="status" aria-live="polite" aria-atomic="true"></div>
 
+<!-- 嵌入式兜底元数据（PR-B 网络兜底）
+     当 Contents API + raw.githubusercontent.com 双双失败时使用
+     保证播放器在完全离线下仍能展示完整歌单 -->
+<script type="application/json" id="tracksFallback">
+{
+  "music_mj_ai.mp3": {"title": "AI · I'm Alive", "desc": "1980s pop · MJ", "size": 4692313},
+  "music_ocean.mp3": {"title": "海浪冥想", "desc": "Ambient · 海浪", "size": 2941899},
+  "music_forest.mp3": {"title": "走进森林", "desc": "Ambient · 林间", "size": 5246526},
+  "music_plains.mp3": {"title": "站在旷野", "desc": "Ambient · 草甸", "size": 4859496},
+  "music_morning.mp3": {"title": "早安", "desc": "Morning wake-up", "size": 3744381},
+  "music_sunrise.mp3": {"title": "九点阳光", "desc": "Commute · 120 BPM", "size": 2312453},
+  "music_jue.mp3": {"title": "角音疏肝", "desc": "五音 · 角", "size": 5494794},
+  "music_shang.mp3": {"title": "商音润肺", "desc": "五音 · 商", "size": 4845286},
+  "music_suona.mp3": {"title": "百乐之王", "desc": "唢呐独奏", "size": 5370242},
+  "music_fate.mp3": {"title": "小提琴命运", "desc": "贝多芬 5th 弦乐版", "size": 4439029},
+  "music_zhi.mp3": {"title": "徵音养心", "desc": "五音 · 徵", "size": 14962406},
+  "music_gong.mp3": {"title": "宫音健脾", "desc": "五音 · 宫", "size": 5121975},
+  "music_yu.mp3": {"title": "羽音补肾", "desc": "五音 · 羽", "size": 14638905}
+}
+</script>
+
 <div class="wrap">
   <header>
     <div class="brand">
@@ -517,6 +540,7 @@
     <div class="head-actions">
       <button class="icon-btn" id="refreshBtn" title="从 GitHub 重新拉取列表">↻ 刷新</button>
       <button class="icon-btn" id="uploadBtn" title="上传 MP3">＋ 上传</button>
+      <button class="icon-btn" id="ttsBtn" title="语音导言（关闭/打开）" aria-pressed="false">🔈 TTS</button>
       <button class="icon-btn" id="settingsBtn" title="设置">⚙</button>
       <a class="icon-btn github-link" href="https://github.com/binbinao/hailuo-music" target="_blank" rel="noopener">↗ GitHub</a>
     </div>
@@ -789,6 +813,8 @@ function playAt(i) {
   }
   audio.src = primary(TRACKS[i].file);
   setActive(i);
+  // 每次点歌都解锁（解锁只发生一次，无副作用）
+  unlockTts();
   audio.play().catch(e => {
     setCurStatus("浏览器拦截了自动播放，请点击 ▶ — " + (e.message || ""));
   });
@@ -804,6 +830,8 @@ audio.addEventListener("pause", () => { els.playBtn.textContent = "▶";  els.co
 audio.addEventListener("ended", () => playAt((current + 1) % TRACKS.length));
 audio.addEventListener("loadedmetadata", () => {
   els.tot.textContent = fmt(audio.duration);
+  // 加载完成后，如果 TTS 开着，自动播报导言
+  if (ttsEnabled && current >= 0) speakAnnounce(TRACKS[current]);
 });
 audio.addEventListener("timeupdate", () => {
   if (!isFinite(audio.duration)) return;
@@ -828,6 +856,80 @@ audio.addEventListener("error", () => {
 });
 
 els.playBtn.addEventListener("click", toggle);
+
+// ===== TTS（浏览器内置 speechSynthesis，零依赖）=====
+// 中文 Chrome 默认 zh-CN 女声；如果系统没中文，fallback 到带 zh 的语音，最后用默认。
+let ttsVoice = null;        // 选定的 zh-CN voice（首次需 GetVoices 异步）
+let ttsUnlocked = false;    // 用户已交互过，可调用 speak()
+const TTS_KEY = "hailuo-music:tts-enabled";
+let ttsEnabled = localStorage.getItem(TTS_KEY) === "1"; // 默认关闭（自动声音违反 a11y 默认值）
+
+function pickZhVoice() {
+  const voices = speechSynthesis.getVoices();
+  if (!voices.length) return null;
+  return (
+    voices.find(v => v.lang === "zh-CN" && /female|woman|xiao/i.test(v.name)) ||
+    voices.find(v => v.lang === "zh-CN") ||
+    voices.find(v => v.lang?.startsWith("zh")) ||
+    voices.find(v => v.default) ||
+    voices[0]
+  );
+}
+function unlockTts() {
+  if (ttsUnlocked) return;
+  ttsUnlocked = true;
+  // 第一次用户交互后有些浏览器 voices 才填好，延迟再选
+  if (speechSynthesis.onvoiceschanged !== undefined || true) {
+    ttsVoice = pickZhVoice();
+    if (!ttsVoice) {
+      speechSynthesis.onvoiceschanged = () => {
+        ttsVoice = pickZhVoice();
+        speechSynthesis.onvoiceschanged = null;
+      };
+    }
+  }
+}
+function fmtDur(d) {
+  if (!isFinite(d)) return "";
+  const m = Math.floor(d / 60), s = Math.floor(d % 60);
+  return `${m} 分 ${s} 秒`;
+}
+function speak(text) {
+  if (!ttsEnabled || !ttsUnlocked || !("speechSynthesis" in window)) return;
+  speechSynthesis.cancel(); // 中断上一次的导言，避免堆叠
+  const u = new SpeechSynthesisUtterance(text);
+  if (ttsVoice) u.voice = ttsVoice;
+  u.lang = ttsVoice?.lang || "zh-CN";
+  u.rate = 0.95;
+  u.pitch = 1.0;
+  u.volume = 1.0;
+  speechSynthesis.speak(u);
+}
+function speakAnnounce(t) {
+  if (!t) return;
+  const dur = isFinite(audio.duration) ? fmtDur(audio.duration) : "";
+  const style = t.desc || "";
+  // 例: "下一首，走进森林，两分四十四秒，ambient 林间呼吸。"
+  const parts = ["现在播放", t.title];
+  if (dur) parts.push(dur);
+  if (style) parts.push(style);
+  speak(parts.join("，") + "。");
+}
+function updateTtsBtn() {
+  const b = els.ttsBtn;
+  b.setAttribute("aria-pressed", ttsEnabled ? "true" : "false");
+  b.textContent = ttsEnabled ? "🔊 TTS" : "🔈 TTS";
+  b.title = ttsEnabled ? "关闭语音导言" : "打开语音导言";
+}
+function toggleTts() {
+  ttsEnabled = !ttsEnabled;
+  localStorage.setItem(TTS_KEY, ttsEnabled ? "1" : "0");
+  updateTtsBtn();
+  if (!ttsEnabled) speechSynthesis.cancel();
+  toast(ttsEnabled ? "语音导言已打开：每首歌播放前自动播报" : "语音导言已关闭", "ok");
+}
+els.ttsBtn.addEventListener("click", toggleTts);
+updateTtsBtn();
 $("prev").addEventListener("click", () => playAt((current - 1 + TRACKS.length) % TRACKS.length));
 $("next").addEventListener("click", () => playAt((current + 1) % TRACKS.length));
 
