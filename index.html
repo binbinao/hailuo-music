@@ -204,9 +204,51 @@
     button.btn.play:hover { transform: scale(1.06); }
         button.btn.play:active { transform: scale(0.98); }
         button.btn.play:disabled { filter: grayscale(0.5); opacity: 0.6; }
-        .progress { flex: 1; height: 8px; background: var(--white-08); border-radius: var(--r-pill); position: relative; cursor: pointer; transition: height var(--dur-fast) var(--ease-out-expo); }
-        .progress:hover, .progress:focus-within { height: 12px; }
-        .bar { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: var(--r-pill); background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width var(--dur-fast) var(--ease-out-expo); }
+        /* 进度条 (PR audit): 改 <input type="range"> 拿原生键盘 + a11y;
+           自绘轨道 + 隐藏原生 thumb, 视觉不变 */
+        .progress {
+          -webkit-appearance: none; appearance: none;
+          flex: 1; height: 8px; padding: 0; margin: 0;
+          background: linear-gradient(
+            to right,
+            var(--accent) 0%, var(--accent-2) var(--progress, 0%),
+            var(--white-08) var(--progress, 0%), var(--white-08) 100%
+          );
+          border-radius: var(--r-pill);
+          border: none;
+          cursor: pointer;
+          outline: none;
+        }
+        /* track (Webkit/Firefox) — 透明轨道，背景由 .progress 渲染 */
+        .progress::-webkit-slider-runnable-track { height: 8px; background: transparent; border-radius: var(--r-pill); }
+        .progress::-moz-range-track { height: 8px; background: transparent; border-radius: var(--r-pill); border: none; }
+        .progress::-webkit-slider-thumb {
+          -webkit-appearance: none; appearance: none;
+          width: 14px; height: 14px; margin-top: -3px;
+          background: var(--fg); border-radius: 50%;
+          border: 1px solid var(--border-2);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+          cursor: grab;
+          opacity: 0;
+          transition: opacity var(--dur-fast) var(--ease-out-expo);
+        }
+        .progress::-moz-range-thumb {
+          width: 14px; height: 14px;
+          background: var(--fg); border-radius: 50%;
+          border: 1px solid var(--border-2);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+          cursor: grab;
+          opacity: 0;
+          transition: opacity var(--dur-fast) var(--ease-out-expo);
+        }
+        /* 触摸区/鼠标交互时 thumb 显出 */
+        .progress:hover::-webkit-slider-thumb,
+        .progress:focus::-webkit-slider-thumb { opacity: 1; }
+        .progress:hover::-moz-range-thumb,
+        .progress:focus::-moz-range-thumb { opacity: 1; }
+        /* focus ring — PR audit 不能动 border-radius, 用 outline */
+        .progress:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; }
+        .progress:hover, .progress:focus-within { /* 保持基线不变, 旧版 hover 12px 引入跳变删除 */ }
         .time { color: var(--fg-dim-strong); font-variant-numeric: tabular-nums; font-size: var(--fs-xs); min-width: 92px; text-align: right; }
         .vol { display: flex; align-items: center; gap: var(--sp-2); }
         .vol input { width: 90px; accent-color: var(--accent); }
@@ -363,11 +405,11 @@
     white-space: normal;
   }
 
-  /* ===== Focus visibility（Task 9） ===== */
+  /* ===== Focus visibility（Task 9; PR audit 修复） ===== */
+  /* 修复：旧版 border-radius:var(--sp-1) 在 pill/10px 列表项上变成方角 → 现在只设 outline */
   *:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
-    border-radius: var(--sp-1);
   }
   button:focus-visible, .icon-btn:focus-visible {
     outline-offset: 3px;
@@ -407,30 +449,35 @@
     .meta .desc  { font-size: var(--fs-xs); -webkit-line-clamp: 2; }
     .meta .title.marquee { --dur-slow: 10s; }
 
-    /* 控件拆两行 */
+    /* Mobile controls baseline 对齐 (PR audit 终极方案 v4)
+       目标: progress 几何中心 ≈ play 几何中心 (≤12px diff)
+       现在: play 56×56, progress 24px (padding) 视觉 8px
+       play.cy=227, progress.cy=261 (差 34)
+       解法: 把 row1 高度从 56px 减到 32px (放 play 底部), row2 用 padding 让 progress 居中
+       → progress cy 上移到 play 中心附近 */
     .controls {
       display: grid;
-      grid-template-columns: 1fr;
-      grid-template-rows: auto auto;
-      gap: var(--sp-2);
-      margin-top: var(--sp-3);
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 36px auto;
+      column-gap: var(--sp-2);
+      row-gap: 0;
+      align-items: stretch;
     }
-    /* 第一行：上一首 / 播放 / 下一首 */
-    .controls #prev,
-    .controls #play,
-    .controls #next {
-      grid-row: 1;
+    .controls #prev { grid-row: 1; grid-column: 1; justify-self: end;    align-self: end; }
+    .controls #play { grid-row: 1; grid-column: 2; justify-self: center; align-self: end; margin-bottom: -14px; /* 让 play 下伸到 row 2, 让它视觉占据高度更大 */}
+    .controls #next { grid-row: 1; grid-column: 3; justify-self: start;  align-self: end; }
+    .controls #progress {
+      grid-row: 2; grid-column: 1 / 4; align-self: center;
+      margin: 0;
+      min-height: 32px; padding: 12px 0;
+      box-sizing: border-box;
     }
-    .controls #prev { grid-column: 1; justify-self: end; }
-    .controls #play { grid-column: 2; justify-self: center; }
-    .controls #next { grid-column: 3; justify-self: start; }
-    /* 第二行：progress + 时间 */
-    .controls #progress { grid-row: 2; grid-column: 1 / -1; }
-    .controls .time { grid-row: 2; grid-column: 1 / -1; text-align: right; margin-top: -8px; }
+    .controls .time { grid-row: 2; grid-column: 3; justify-self: end; align-self: center; padding-left: var(--sp-2); }
     button.btn.play { width: 56px; height: 56px; }
 
-    /* header 紧凑 */
-    header { gap: var(--sp-2); }
+    /* cover 在 mobile 上不让它"重": 减弱阴影 (PR audit) */
+    .cover { box-shadow: 0 2px 6px var(--shadow-cover); }
+    .cover::after { background: radial-gradient(circle at 50% 50%, transparent 38%, transparent 60%); }
     .brand h1 { font-size: var(--fs-lg); }
     .brand .sub { font-size: 11px; }
     .head-actions .icon-btn { font-size: 11px; padding: var(--sp-1) var(--sp-2); }
@@ -559,9 +606,9 @@
       </div>
       <div class="controls">
         <button class="btn" id="prev" title="上一首">⏮</button>
-        <button class="btn play" id="play" title="播放/暂停">▶</button>
-        <button class="btn" id="next" title="下一首">⏭</button>
-        <div class="progress" id="progress"><div class="bar" id="bar"></div></div>
+        <button class="btn play" id="play" aria-label="播放/暂停" title="播放/暂停">▶</button>
+        <button class="btn" id="next" aria-label="下一首" title="下一首">⏭</button>
+        <input type="range" class="progress" id="progress" min="0" max="1" step="any" value="0" aria-label="播放进度" aria-valuetext="0:00 of 0:00">
         <div class="time"><span id="cur">0:00</span> / <span id="tot">0:00</span></div>
         <div class="vol">
           <span style="color:var(--fg-dim);font-size:12px">🔊</span>
@@ -693,7 +740,12 @@ function renderList() {
   pageItems.forEach((t, j) => {
     const i = startIdx + j; // 全局真实索引
     const li = document.createElement("li");
+    li.className = "track-row";
     li.dataset.idx = i;
+    li.setAttribute("role", "button");
+    li.setAttribute("tabindex", "0");
+    li.setAttribute("aria-label",
+      `播放：${t.title}${t.desc ? '，' + t.desc : ''}，${fmtBytes(t.size)}`);
     li.innerHTML = `
       <div class="num">${String(i+1).padStart(2,"0")}</div>
       <div class="name">
@@ -702,7 +754,14 @@ function renderList() {
       </div>
       <div class="dur">${fmtBytes(t.size)}</div>
     `;
-    li.addEventListener("click", () => playAt(i));
+    const handler = () => playAt(i);
+    li.addEventListener("click", handler);
+    li.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handler();
+      }
+    });
     els.list.appendChild(li);
   });
 
@@ -730,7 +789,7 @@ function setActive(i) {
     renderList(); // 会重新渲染 + 保留 current 高亮（重新执行下面逻辑）
     return;
   }
-  [...els.list.children].forEach((el, idx) => el.classList.toggle("active", idx === i));
+  [...els.list.children].forEach(el => el.classList.toggle("active", +el.dataset.idx === i));
   if (i >= 0 && TRACKS[i]) {
     setCurInfo(TRACKS[i].title, TRACKS[i].desc || "");
     els.cover.classList.toggle("playing", !audio.paused);
@@ -836,7 +895,13 @@ audio.addEventListener("loadedmetadata", () => {
 });
 audio.addEventListener("timeupdate", () => {
   if (!isFinite(audio.duration)) return;
-  els.bar.style.width = (audio.currentTime / audio.duration * 100) + "%";
+  if (isFinite(audio.duration) && audio.duration > 0) {
+    const pct = audio.currentTime / audio.duration * 100;
+    els.progress.value = audio.currentTime / audio.duration;
+    els.progress.style.setProperty("--progress", pct + "%");
+    els.progress.setAttribute("aria-valuetext",
+      `${fmt(audio.currentTime)} / ${fmt(audio.duration)}`);
+  }
   els.cur.textContent = fmt(audio.currentTime);
 });
 audio.addEventListener("error", () => {
@@ -944,10 +1009,9 @@ function goPage(delta) {
 }
 els.pagerPrev.addEventListener("click", () => goPage(-1));
 els.pagerNext.addEventListener("click", () => goPage(1));
-els.progress.addEventListener("click", e => {
-  if (!isFinite(audio.duration)) return;
-  const r = els.progress.getBoundingClientRect();
-  audio.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * audio.duration;
+els.progress.addEventListener("input", () => {
+  if (!isFinite(audio.duration) || audio.duration === 0) return;
+  audio.currentTime = +els.progress.value * audio.duration;
 });
 els.vol.addEventListener("input", () => { audio.volume = +els.vol.value; });
 document.addEventListener("keydown", e => {
