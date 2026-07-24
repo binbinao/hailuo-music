@@ -1,0 +1,30 @@
+{
+  "name": "海螺音乐 - Web Player",
+  "short_name": "海螺音乐",
+  "description": "海螺音乐 GitHub 仓库直连播放 · 客户端直传",
+  "start_url": "/hailuo-music/",
+  "scope": "/hailuo-music/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0d12",
+  "theme_color": "#7c9cff",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["music", "entertainment"],
+  "icons": [
+    { "src": "/hailuo-music/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/hailuo-music/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/hailuo-music/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/hailuo-music/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "九点阳光",
+      "url": "/hailuo-music/?track=music_sunrise.mp3"
+    },
+    {
+      "name": "阴符经",
+      "url": "/hailuo-music/?track=music_yinfu.mp3"
+    }
+  ]
+}
