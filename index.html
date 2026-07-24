@@ -449,35 +449,36 @@
     .meta .desc  { font-size: var(--fs-xs); -webkit-line-clamp: 2; }
     .meta .title.marquee { --dur-slow: 10s; }
 
-    /* Mobile controls baseline 对齐 (PR audit 终极方案 v4)
-       目标: progress 几何中心 ≈ play 几何中心 (≤12px diff)
-       现在: play 56×56, progress 24px (padding) 视觉 8px
-       play.cy=227, progress.cy=261 (差 34)
-       解法: 把 row1 高度从 56px 减到 32px (放 play 底部), row2 用 padding 让 progress 居中
-       → progress cy 上移到 play 中心附近 */
+    /* Mobile controls: 简单回滚到 inline flex 布局
+       上一版 v3-v5 都把 layout 做复杂, 用户报"更丑"
+       现在回滚到 *简单* flex 布局: 一行 prev/play/next + 一行 progress/time
+       但保证 play 与 progress 视觉紧凑 (每行 36-40 高, row-gap 0)
+       → controls 总高 ~76, 不挤压 */
     .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      grid-template-rows: 36px auto;
-      column-gap: var(--sp-2);
-      row-gap: 0;
-      align-items: stretch;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: var(--sp-2) var(--sp-3);
+      margin-top: var(--sp-3);
     }
-    .controls #prev { grid-row: 1; grid-column: 1; justify-self: end;    align-self: end; }
-    .controls #play { grid-row: 1; grid-column: 2; justify-self: center; align-self: end; margin-bottom: -14px; /* 让 play 下伸到 row 2, 让它视觉占据高度更大 */}
-    .controls #next { grid-row: 1; grid-column: 3; justify-self: start;  align-self: end; }
+    .controls #prev { width: 42px; height: 42px; }
+    button.btn.play { width: 56px; height: 56px; }
+    .controls #next { width: 42px; height: 42px; }
     .controls #progress {
-      grid-row: 2; grid-column: 1 / 4; align-self: center;
-      margin: 0;
-      min-height: 32px; padding: 12px 0;
+      flex: 1 1 100%;
+      min-height: 0;
+      padding: 4px 0;
       box-sizing: border-box;
     }
-    .controls .time { grid-row: 2; grid-column: 3; justify-self: end; align-self: center; padding-left: var(--sp-2); }
-    button.btn.play { width: 56px; height: 56px; }
+    .controls .time {
+      flex: 0 0 auto;
+      padding-left: var(--sp-2);
+    }
 
-    /* cover 在 mobile 上不让它"重": 减弱阴影 (PR audit) */
-    .cover { box-shadow: 0 2px 6px var(--shadow-cover); }
-    .cover::after { background: radial-gradient(circle at 50% 50%, transparent 38%, transparent 60%); }
+    /* cover: 适中阴影 */
+    .cover { box-shadow: 0 8px 16px var(--shadow-cover); }
+    .cover::after { background: radial-gradient(circle at 50% 50%, transparent 32%, var(--black-35) 34%, transparent 62%); }
     .brand h1 { font-size: var(--fs-lg); }
     .brand .sub { font-size: 11px; }
     .head-actions .icon-btn { font-size: 11px; padding: var(--sp-1) var(--sp-2); }
