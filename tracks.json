@@ -63,5 +63,10 @@
     "title": "羽音补肾",
     "desc": "五音疗愈 · 羽调 Yu mode · 箫笛低音弦 · 补肾固本",
     "cover": "music_yu.jpg"
+  },
+  "music_yinfu.mp3": {
+    "title": "阴符经",
+    "desc": "古琴与洞箫 · 男声念诵阴符经原文 5 段 · 60 BPM · 修身静听",
+    "cover": "music_yinfu.jpg"
   }
 }
