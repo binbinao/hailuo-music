@@ -227,48 +227,23 @@
     background: radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.25) 26%, transparent 35%);
     pointer-events: none;
   }
-  /* 唱针臂 (tonearm) — 绝对定位相对 .cover (因为 .cover 是 position:relative)
-     .needle 跟 .cover 一起 spin, 但用反向 animation-direction: reverse 抵消
-     视觉上 = 唱针不动, 黑胶在转 */
+  /* 唱针臂 (tonearm): inline SVG — 5 部件 turntable mechanism
+     .cover 旋转时 SVG 反向 spin, 静态视觉 */
   .needle {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    border-radius: 50%;
     pointer-events: none;
-    overflow: hidden;
-    animation: spin 8s linear infinite reverse;  /* 反向抵消 cover spin */
+    overflow: visible;
+    animation: spin 8s linear infinite reverse;
   }
-  /* 臂身: 从右上 1/4 到中心 */
-  .needle::before {
-    content: "";
-    position: absolute;
-    top: 18%;   /* 右上 18% from top */
-    left: 78%;  /* 右上 78% from left */
-    width: 2.5%; height: 14%;   /* 短臂 */
-    background: linear-gradient(180deg, #f3f3f3 0%, #d8d8d8 50%, #f3f3f3 100%);
-    border-radius: 2px;
-    transform: translate(-50%, -50%) rotate(40deg);
-    transform-origin: 50% 0%;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.5);
-  }
-  /* 黄针尖 (cartridge tip): 压唱片"擦"上的位置 — 中心附近 */
-  .needle::after {
-    content: "";
-    position: absolute;
-    top: 50%; left: 51%;
-    width: 10%; height: 7%;
-    border-radius: 30% 30% 50% 50% / 30% 30% 60% 60%;
-    background: linear-gradient(135deg, #ffc107 0%, #ff9800 60%, #e65100 100%);
-    transform: translate(-50%, -50%) rotate(-25deg);
-    box-shadow:
-      0 1px 2px rgba(0,0,0,0.6),
-      inset 0 -1px 1px rgba(0,0,0,0.4),
-      inset 0 1px 1px rgba(255,255,255,0.3);
-  }
-  /* 当 cover 不转时 (pause, idle), needle 也要停 — 让 cover.playing 单决定 */
+  /* Pause/idle 时 SVG 也停, 严格跟 .cover.playing 同步 */
   .cover:not(.playing) .needle { animation: none; }
-  /* Reduced motion: cover 不转, needle 也不转 */
+  /* SVG 内部 stroke 微细 (0.4 width) 在 88px 容器下偏粗
+     用 vector-effect 让 stroke 保持锐利, 无 sub-pixel blur */
+  .needle path, .needle circle, .needle rect, .needle ellipse {
+    vector-effect: non-scaling-stroke;
+  }
   .cover.playing { animation: spin 8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .meta { min-width: 0; overflow: hidden; }
@@ -677,9 +652,94 @@
 
   <section class="now">
     <div class="cover" id="cover">
-      <!-- 唱针臂 (tonearm) — 放在 .cover 里 + 反向 spin animation
-           抵消 .cover 的 8s 旋转. JS 不参与 -->
-      <span class="needle" aria-hidden="true"></span>
+      <!-- 唱针臂 (tonearm): inline SVG turntable mechanism
+           5 部件: pivot + counterweight + S-arm + cartridge head + gold needle
+           反向 spin animation 抵消 .cover 的旋转, 视觉静止 -->
+      <svg class="needle" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <linearGradient id="armChrome" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"  stop-color="#fff"/>
+            <stop offset="40%" stop-color="#c0c8d4"/>
+            <stop offset="50%" stop-color="#5c6470"/>
+            <stop offset="60%" stop-color="#9aa3b0"/>
+            <stop offset="100%" stop-color="#3a3f48"/>
+          </linearGradient>
+          <linearGradient id="counterChrome" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"  stop-color="#7a8090"/>
+            <stop offset="50%" stop-color="#2a2d35"/>
+            <stop offset="100%" stop-color="#1a1c22"/>
+          </linearGradient>
+          <linearGradient id="cartridgeBody" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"  stop-color="#3c3e44"/>
+            <stop offset="50%" stop-color="#1a1c22"/>
+            <stop offset="100%" stop-color="#0a0c10"/>
+          </linearGradient>
+          <linearGradient id="needleTip" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"  stop-color="#ffd54f"/>
+            <stop offset="50%" stop-color="#ffb300"/>
+            <stop offset="100%" stop-color="#c68400"/>
+          </linearGradient>
+          <radialGradient id="pivotBolt" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"  stop-color="#fff"/>
+            <stop offset="60%" stop-color="#9aa3b0"/>
+            <stop offset="100%" stop-color="#1a1c22"/>
+          </radialGradient>
+        </defs>
+
+        <!-- Counterweight (后端配重): 右上圆形银柱 -->
+        <circle cx="80" cy="22" r="7" fill="url(#counterChrome)" stroke="#0a0c10" stroke-width="0.4"/>
+        <circle cx="80" cy="22" r="3" fill="#1a1c22"/>
+        <!-- Counterweight stub (短粗到 pivot) -->
+        <rect x="78" y="22" width="6" height="6" rx="1" fill="url(#counterChrome)"/>
+
+        <!-- 主臂身 S-curve: 从 counterweight → pivot → cartridge -->
+        <!-- 用 vector path 实现 S 形 — 真 turntable 特征 -->
+        <path d="
+            M 81 24
+            L 78 32
+            Q 60 38 35 56
+            L 56 56
+            Q 56 56 56 56
+          " fill="url(#armChrome)" stroke="#1a1c22" stroke-width="0.3" stroke-linejoin="round"/>
+        <!-- 笔画加粗: 给 arm 一个明确口径 -->
+        <path d="
+            M 79 24
+            Q 56 35 35 56
+            L 56 56
+          " stroke="#c0c8d4" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.7"/>
+
+        <!-- Pivot (轴): 右下 65,60 银色圆 -->
+        <circle cx="56" cy="56" r="4.5" fill="url(#pivotBolt)" stroke="#0a0c10" stroke-width="0.4"/>
+        <circle cx="56" cy="56" r="1.6" fill="#0a0c10"/>
+
+        <!-- Cartridge body: 1.2cm 后的浅黑色梯形 — 工业感 -->
+        <path d="
+            M 56 56
+            L 45 56
+            L 41 60
+            L 41 66
+            L 50 65
+            L 55 60
+            Z
+          " fill="url(#cartridgeBody)" stroke="#0a0c10" stroke-width="0.4" stroke-linejoin="round"/>
+        <!-- Cartridge 上小圆点 (固定螺丝/品牌装饰) -->
+        <circle cx="48" cy="60" r="0.9" fill="#9aa3b0"/>
+        <circle cx="46" cy="62" r="0.7" fill="#d4d8df"/>
+        <circle cx="50" cy="62" r="0.7" fill="#d4d8df"/>
+
+        <!-- 真针 (needle tip): 在 cartridge 末端的小金色三角 -->
+        <path d="
+            M 41 66
+            L 38 71
+            L 42 70
+            Z
+          " fill="url(#needleTip)" stroke="#1a1c22" stroke-width="0.2" stroke-linejoin="round"/>
+        <!-- 针尖点 -->
+        <circle cx="38.5" cy="71" r="0.6" fill="#fff" opacity="0.9"/>
+
+        <!-- 微弱影子: 让 cartridge 不"飘"在背景 -->
+        <ellipse cx="50" cy="68" rx="11" ry="3" fill="#000" opacity="0.4"/>
+      </svg>
     </div>
     <div>
       <div class="meta">
