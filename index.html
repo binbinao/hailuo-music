@@ -239,13 +239,12 @@
   }
   /* Pause/idle 时 SVG 也停, 严格跟 .cover.playing 同步 */
   .cover:not(.playing) .needle { animation: none; }
-  /* SVG 内部 stroke 微细 (0.4 width) 在 88px 容器下偏粗
-     用 vector-effect 让 stroke 保持锐利, 无 sub-pixel blur */
-  .needle path, .needle circle, .needle rect, .needle ellipse {
+  /* SVG path 内部 stroke 微细 (0.4 width) 在 88px 容器下偏粗
+     用 vector-effect 让 stroke 保持锐利, 无 sub-pixel blur
+     (但 fill 不能 vector-effect, 否则缩为 0) */
+  .needle circle, .needle rect, .needle ellipse {
     vector-effect: non-scaling-stroke;
   }
-  /* SVG 浮在 cover 上面, 确保可见 */
-  .needle { z-index: 2; }
   .cover.playing { animation: spin 8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .meta { min-width: 0; overflow: hidden; }
@@ -658,34 +657,40 @@
            5 部件: pivot + counterweight + S-arm + cartridge head + gold needle
            反向 spin animation 抵消 .cover 的旋转, 视觉静止 -->
       <svg class="needle" viewBox="0 0 100 100" aria-hidden="true">
-        <!-- Counterweight (后端配重): 右上圆形银柱, 金属 2-tone 渐变 (稳走 chrome 调子) -->
-        <circle cx="80" cy="22" r="7.5" fill="#5c6470" stroke="#0a0c10" stroke-width="0.5"/>
-        <circle cx="80" cy="22" r="6" fill="none" stroke="#9aa3b0" stroke-width="0.6"/>
-        <circle cx="79" cy="20" r="1.5" fill="#c0c8d4" opacity="0.7"/>
+        <!-- Counterweight (后端配重): 右上圆形银柱, 2-tone 立体感, 加粗 stroke -->
+        <circle cx="80" cy="22" r="7.5" fill="#3a3f48" stroke="#0a0c10" stroke-width="1"/>
+        <circle cx="80" cy="22" r="6" fill="#7a8090" stroke="#9aa3b0" stroke-width="0.8"/>
+        <circle cx="79" cy="20" r="2.5" fill="#c0c8d4" opacity="0.9"/>
+        <circle cx="81" cy="24" r="0.8" fill="#5c6470"/>
         <!-- Counterweight stub (短粗到 pivot) -->
         <rect x="78" y="22" width="6" height="6" rx="1" fill="#7a8090"/>
 
-        <!-- 主臂身 S-curve: 从 counterweight → pivot → cartridge -->
-        <!-- 用 vector path 实现 S 形 — 真 turntable 特征 -->
+        <!-- 主臂身 S-curve: 主体银色 + 上半高光 -->
         <path d="
             M 81 24
             L 78 32
             Q 60 38 35 56
             L 56 56
-            Q 56 56 56 56
-          " fill="#c0c8d4" stroke="#1a1c22" stroke-width="0.3" stroke-linejoin="round"/>
-        <!-- 笔画加粗: 给 arm 一个明确口径 -->
+          " fill="#7a8090" stroke="#0a0c10" stroke-width="1" stroke-linejoin="round"/>
+        <!-- 上半高光 (银色 highlight) — 明显加粗保证渲染 -->
         <path d="
             M 79 24
-            Q 56 35 35 56
-            L 56 56
-          " stroke="#c0c8d4" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.7"/>
+            Q 56 33 38 56
+            L 36 56
+          " stroke="#c0c8d4" stroke-width="2.4" fill="none" stroke-linecap="round" opacity="0.9"/>
+        <!-- 下半阴影 (深 shadow) -->
+        <path d="
+            M 80 26
+            Q 60 38 38 58
+            L 56 58
+          " stroke="#1a1c22" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.7"/>
 
-        <!-- Pivot (轴): 右下 65,60 银色圆 -->
-        <circle cx="56" cy="56" r="4.5" fill="#c0c8d4" stroke="#0a0c10" stroke-width="0.4"/>
-        <circle cx="56" cy="56" r="1.6" fill="#0a0c10"/>
+        <!-- Pivot (轴): 2-tone, 中心亮银 -->
+        <circle cx="56" cy="56" r="5" fill="#1a1c22"/>
+        <circle cx="56" cy="56" r="4" fill="#7a8090"/>
+        <circle cx="55" cy="55" r="1.5" fill="#c0c8d4"/>
 
-        <!-- Cartridge body: 1.2cm 后的浅黑色梯形 — 工业感 -->
+        <!-- Cartridge body: 黑色梯形 + 顶面高光, 加粗 stroke -->
         <path d="
             M 56 56
             L 45 56
@@ -694,21 +699,36 @@
             L 50 65
             L 55 60
             Z
-          " fill="#1a1c22" stroke="#0a0c10" stroke-width="0.4" stroke-linejoin="round"/>
+          " fill="#1a1c22" stroke="#0a0c10" stroke-width="0.8" stroke-linejoin="round"/>
+        <!-- cartridge 顶面亮色 (上面板反射光) -->
+        <path d="
+            M 56 56
+            L 45 56
+            L 49 58
+            L 54 58
+            Z
+          " fill="#5c6470" stroke="none" opacity="0.8"/>
         <!-- Cartridge 上小圆点 (固定螺丝/品牌装饰) -->
         <circle cx="48" cy="60" r="0.9" fill="#9aa3b0"/>
         <circle cx="46" cy="62" r="0.7" fill="#d4d8df"/>
         <circle cx="50" cy="62" r="0.7" fill="#d4d8df"/>
 
-        <!-- 真针 (needle tip): 在 cartridge 末端的小金色三角 -->
+        <!-- 真针 (needle tip): 在 cartridge 末端的小金色三角, 显著加大 -->
         <path d="
-            M 41 66
-            L 38 71
-            L 42 70
+            M 39 64
+            L 34 73
+            L 44 71
             Z
-          " fill="#ffd54f" stroke="#1a1c22" stroke-width="0.2" stroke-linejoin="round"/>
+          " fill="#ffb300" stroke="#0a0c10" stroke-width="0.8" stroke-linejoin="round"/>
+        <!-- 针头高光 — 更大更明显 -->
+        <path d="
+            M 39 64
+            L 36 67
+            L 42 67
+            Z
+          " fill="#fff5b3" stroke="none" opacity="0.95"/>
         <!-- 针尖点 -->
-        <circle cx="38.5" cy="71" r="0.6" fill="#fff" opacity="0.9"/>
+        <circle cx="34" cy="73" r="1.5" fill="#fff" stroke="#ffb300" stroke-width="0.5"/>
 
         <!-- 微弱影子: 让 cartridge 不"飘"在背景 -->
         <ellipse cx="50" cy="68" rx="11" ry="3" fill="#000" opacity="0.4"/>
