@@ -190,8 +190,43 @@
     display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: var(--sp-4); align-items: center;
     box-shadow: 0 18px 50px var(--shadow-now);
   }
-  .cover { width: 88px; height: 88px; border-radius: var(--r-lg); background: conic-gradient(from 0deg, var(--accent), var(--accent-2), var(--accent)); position: relative; overflow: hidden; box-shadow: 0 8px 24px var(--shadow-cover); }
-  .cover::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, transparent 28%, var(--black-35) 30%, transparent 60%); }
+  /* 黑胶唱片 (PR audit) — CSS-only 矢量设计:
+       1) 深炭灰圆盘 + radial gradient 模拟胶面反光
+       2) 同心沟槽 (repeating-radial-gradient 微条)
+       3) 中心红色 label 圆盘
+       4) ::before 黑色轴孔
+       5) ::after 阴影 (dim)
+       playing 时整个 .cover 旋转 8s (唱针臂本来是装饰一部分所以一起转)
+  */
+  .cover {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 50% 50%, var(--danger) 0%, var(--danger) 18%, transparent 19%),
+      repeating-radial-gradient(circle at 50% 50%, transparent 0 3px, rgba(255,255,255,0.05) 3px 4px),
+      radial-gradient(circle at 50% 50%, #2c2e34 0%, #1a1c22 100%);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 24px var(--shadow-cover);
+  }
+  .cover::before {
+    content: "";
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 6%; height: 6%;
+    border-radius: 50%;
+    background: var(--bg-0);
+    transform: translate(-50%, -50%);
+    z-index: 1;
+  }
+  .cover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.25) 26%, transparent 35%);
+    pointer-events: none;
+  }
   .cover.playing { animation: spin 8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .meta { min-width: 0; overflow: hidden; }
