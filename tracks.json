@@ -68,5 +68,10 @@
     "title": "阴符经",
     "desc": "古琴与洞箫 · 男声念诵阴符经原文 5 段 · 60 BPM · 修身静听",
     "cover": "music_yinfu.jpg"
+  },
+  "music_nap_afternoon.mp3": {
+    "title": "午后小憩",
+    "desc": "三段钢琴/Glockenspiel/风铃纯器乐 · 6 分钟冥想 · 60 BPM · 午后窗边渐进梦",
+    "cover": "music_nap_afternoon.jpg"
   }
 }
